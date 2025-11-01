@@ -123,7 +123,7 @@ export default {
       }
 
       return _.map(this.missionSlotDetails.requiredDLCs, (requiredDLC) => {
-        return `https://slotlist-info.storage.googleapis.com/images/static/dlc-icons/${requiredDLC.toLowerCase()}.png`
+        return `/static/img/dlc-icons/${requiredDLC.toLowerCase()}.png`
       })
     },
     missionSlotSelected() {

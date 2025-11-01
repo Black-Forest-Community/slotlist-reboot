@@ -62,7 +62,7 @@ export default {
       }
 
       return _.map(this.mission.requiredDLCs, (requiredDLC) => {
-        return `https://slotlist-info.storage.googleapis.com/images/static/dlc-icons/${requiredDLC.toLowerCase()}.png`
+        return `/static/img/dlc-icons/${requiredDLC.toLowerCase()}.png`
       })
     }
   }
