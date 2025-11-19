@@ -16,7 +16,7 @@
     <nav v-show="communityListPageCount > 1">
       <paginate ref="communityListPaginate" :pageCount="communityListPageCount" :initial-page="0" :clickHandler="communityListPaginate" :container-class="'pagination justify-content-center'" :page-class="'page-item'" :page-link-class="'page-link'" :prev-class="'page-item'" :prev-link-class="'page-link'" :next-class="'page-item'" :next-link-class="'page-link'"></paginate>
     </nav>
-    <div class="text-center" v-show="loggedIn">
+    <div class="text-center" v-show="canCreateCommunity">
       <router-link tag="button" type="button" class="btn btn-success" :to="{name: 'communityCreator'}">
         <i class="fa fa-plus" aria-hidden="true"></i> {{ $t('button.create.community') }}
       </router-link>
@@ -73,6 +73,9 @@ export default {
     },
     loggedIn() {
       return this.$store.getters.loggedIn
+    },
+    canCreateCommunity() {
+      return this.loggedIn && this.$acl.can(['admin.community'])
     }
   },
   methods: {

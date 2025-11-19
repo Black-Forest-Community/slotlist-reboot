@@ -53,7 +53,8 @@ export const router = new Router({
       name: 'communityCreator',
       component: CommunityCreator,
       meta: {
-        authenticated: true // only logged in users can access this page
+        authenticated: true, // only logged in users can access this page
+        permissions: ['admin.community'] // only users with admin.community permission can create communities
       }
     },
     {
