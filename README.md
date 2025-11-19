@@ -155,7 +155,7 @@ Without a valid Steam API key, authentication will not work.
 
 ### Development Authentication (Testing)
 
-For local development and testing, you can bypass Steam authentication:
+For local development and testing, you can bypass Steam authentication using the backend development endpoint.
 
 #### Backend Development Endpoint
 
@@ -170,24 +170,22 @@ The backend provides a development-only login endpoint:
   }
   ```
 
-#### Frontend Development Login
-
-The frontend includes a hidden development login form that appears when:
-1. **Automatic**: When `BASE_API_URL` contains `localhost` (Docker setup)
-2. **Manual**: Visit `/login?dev=true` to force-show the development login
-
 **How to use**:
-1. Start the application with Docker Compose
-2. Go to http://localhost:3000/login
-3. The development login form will appear automatically
-4. Enter any nickname (Steam ID is optional)
-5. Click "Login (Development)" to authenticate
+You can test authentication by making HTTP requests to the endpoint using tools like curl, Postman, or the API documentation interface:
+
+```bash
+# Example using curl
+curl -X POST http://localhost:8000/api/v1/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"nickname": "TestUser"}'
+```
 
 **Features**:
-- Creates user accounts automatically
+- Creates user accounts automatically if they don't exist
 - Generates fake Steam IDs if not provided
 - Works without Steam API key
 - Only available in development mode (`DEBUG=True`)
+- Returns a JWT token that can be used for authenticated requests
 
 ## Testing
 
@@ -226,9 +224,9 @@ docker-compose exec backend python manage.py test
 - Wait for database to fully initialize (health check)
 
 **Can't log in / Steam authentication issues**:
-- Use development authentication: Go to `/login?dev=true`
+- Use development authentication endpoint: `POST /api/v1/auth/dev-login` with a test nickname
 - Or set Steam API key in `backend/.env`
-- Development login automatically appears when using Docker Compose
+- See the "Backend Development Endpoint" section for details on using dev authentication
 
 ### Development Tips
 
