@@ -33,7 +33,7 @@ cd slotlist-reboot
 2. **Set up environment variables** (optional - auto-created by start.sh):
 Create a `.env` file in the `backend/` directory:
 ```bash
-# Steam API key (optional for development - use dev login instead)
+# Steam API key
 CONFIG_STEAM_API_SECRET=your-steam-api-key-here
 
 # Development defaults (auto-configured)
@@ -170,24 +170,7 @@ The backend provides a development-only login endpoint:
   }
   ```
 
-#### Frontend Development Login
-
-The frontend includes a hidden development login form that appears when:
-1. **Automatic**: When `BASE_API_URL` contains `localhost` (Docker setup)
-2. **Manual**: Visit `/login?dev=true` to force-show the development login
-
-**How to use**:
-1. Start the application with Docker Compose
-2. Go to http://localhost:3000/login
-3. The development login form will appear automatically
-4. Enter any nickname (Steam ID is optional)
-5. Click "Login (Development)" to authenticate
-
-**Features**:
-- Creates user accounts automatically
-- Generates fake Steam IDs if not provided
-- Works without Steam API key
-- Only available in development mode (`DEBUG=True`)
+This endpoint can be used for testing API functionality without requiring Steam authentication.
 
 ## Testing
 
@@ -226,9 +209,8 @@ docker-compose exec backend python manage.py test
 - Wait for database to fully initialize (health check)
 
 **Can't log in / Steam authentication issues**:
-- Use development authentication: Go to `/login?dev=true`
-- Or set Steam API key in `backend/.env`
-- Development login automatically appears when using Docker Compose
+- Set Steam API key in `backend/.env`
+- Verify Steam API key is valid and not expired
 
 ### Development Tips
 
