@@ -19,6 +19,9 @@ export const v1 = {
   },
   editAccount(payload) {
     return axios.patch('/v1/auth/account', payload)
+  },
+  performDevLogin(nickname, steamId = null) {
+    return axios.post('/v1/auth/dev-login', { nickname, steam_id: steamId })
   }
 }
 

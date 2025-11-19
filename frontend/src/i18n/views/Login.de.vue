@@ -15,6 +15,32 @@
         </a>
       </p>
     </b-jumbotron>
+    <b-jumbotron header="Entwickler-Anmeldung" lead="Nur für Testzwecke" v-if="showDevLogin && !working" class="mt-4">
+      <p class="text-justify">
+        Diese Anmeldemethode ist nur im Entwicklungsmodus verfügbar und umgeht die Steam-Authentifizierung.
+        <br>Gib einen beliebigen Nicknamen ein, um ein Testkonto zu erstellen oder dich anzumelden.
+      </p>
+      <b-form @submit.prevent="handleDevLogin" class="mt-3">
+        <b-form-group label="Nickname:" label-for="dev-nickname">
+          <b-form-input
+            id="dev-nickname"
+            v-model="devNickname"
+            type="text"
+            required
+            placeholder="Nickname eingeben"
+          ></b-form-input>
+        </b-form-group>
+        <b-form-group label="Steam ID (optional):" label-for="dev-steam-id">
+          <b-form-input
+            id="dev-steam-id"
+            v-model="devSteamId"
+            type="text"
+            placeholder="Leer lassen für automatische Generierung"
+          ></b-form-input>
+        </b-form-group>
+        <b-button type="submit" variant="primary">Anmelden (Entwicklung)</b-button>
+      </b-form>
+    </b-jumbotron>
     <div class="row text-center">
       <div class="col">
         <h4>Häufig gestellte Fragen bezüglich des Steam-Logins</h4>
@@ -63,12 +89,35 @@
 
 <script>
 export default {
+  data() {
+    return {
+      devNickname: '',
+      devSteamId: ''
+    }
+  },
   computed: {
     loginRedirectUrl() {
       return this.$store.getters.loginRedirectUrl
     },
     working() {
       return this.$store.getters.working
+    },
+    showDevLogin() {
+      // Show dev login if BASE_API_URL contains localhost or if ?dev=true query param is present
+      const isDev = process.env.BASE_API_URL && process.env.BASE_API_URL.includes('localhost')
+      const hasDevQuery = this.$route.query.dev === 'true'
+      return isDev || hasDevQuery
+    }
+  },
+  methods: {
+    handleDevLogin() {
+      this.$store.dispatch('performDevLogin', {
+        nickname: this.devNickname,
+        steamId: this.devSteamId || null
+      }).then(() => {
+        // Redirect to home after successful login
+        this.$router.push({ name: 'home' })
+      })
     }
   }
 }

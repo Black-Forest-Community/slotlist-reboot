@@ -221,6 +221,64 @@ const actions = {
         }
       })
   },
+  performDevLogin({ commit, dispatch }, payload) {
+    dispatch('startWorking', i18n.t('store.performLogin'))
+
+    return AuthApi.performDevLogin(payload.nickname, payload.steamId)
+      .then(function (response) {
+        if (response.status !== 200) {
+          console.error(response)
+          throw "Performing dev login failed"
+        }
+
+        if (_.isEmpty(response.data)) {
+          console.error(response)
+          throw "Received empty response"
+        }
+
+        if (!_.isString(response.data.token) || _.isEmpty(response.data.token)) {
+          console.error(response)
+          throw "Missing JWT"
+        }
+
+        const decodedToken = jwtDecode(response.data.token)
+
+        commit({
+          type: "setToken",
+          token: response.data.token,
+          decodedToken: decodedToken
+        })
+
+        dispatch('stopWorking', i18n.t('store.performLogin'))
+      }).catch((error) => {
+        dispatch('stopWorking', i18n.t('store.performLogin'))
+
+        if (error.response) {
+          console.error('performDevLogin', error.response)
+          dispatch('showAlert', {
+            showAlert: true,
+            alertVariant: 'danger',
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.performLogin.error')} - ${error.response.data.detail || error.response.data.message}`
+          })
+        } else if (error.request) {
+          error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'performDevLogin' } }) : null
+          console.error('performDevLogin', error.request)
+          dispatch('showAlert', {
+            showAlert: true,
+            alertVariant: 'danger',
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.performLogin.error')} - ${i18n.t('failed.request')}`
+          })
+        } else {
+          error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'performDevLogin' } }) : null
+          console.error('performDevLogin', error.message)
+          dispatch('showAlert', {
+            showAlert: true,
+            alertVariant: 'danger',
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.performLogin.error')} - ${i18n.t('failed.something')}`
+          })
+        }
+      })
+  },
   performLogout({ commit, dispatch }) {
     dispatch('stopNotificationPolling')
 
