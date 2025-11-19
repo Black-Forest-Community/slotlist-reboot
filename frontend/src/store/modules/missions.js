@@ -647,11 +647,19 @@ const actions = {
         // Update token if backend provided a new one with creator permissions
         if (response.data.token) {
           const jwtDecode = require('jwt-decode')
-          const decodedToken = jwtDecode(response.data.token)
-          commit('setToken', {
-            token: response.data.token,
-            decodedToken: decodedToken
-          })
+          let decodedToken
+          try {
+            decodedToken = jwtDecode(response.data.token)
+          } catch (err) {
+            console.error('Failed to decode JWT during mission creation', err)
+            console.warn('Continuing without updating token')
+          }
+          if (decodedToken) {
+            commit('setToken', {
+              token: response.data.token,
+              decodedToken: decodedToken
+            })
+          }
         }
 
         dispatch('showAlert', {

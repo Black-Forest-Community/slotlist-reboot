@@ -183,7 +183,13 @@ const actions = {
           throw "Missing JWT"
         }
 
-        const decodedToken = jwtDecode(response.data.token)
+        let decodedToken
+        try {
+          decodedToken = jwtDecode(response.data.token)
+        } catch (err) {
+          console.error('Failed to decode JWT during login', err)
+          throw "Invalid JWT received from server"
+        }
 
         commit({
           type: "setToken",
@@ -229,7 +235,15 @@ const actions = {
     })
   },
   setToken({ commit }, payload) {
-    const decodedToken = jwtDecode(payload)
+    let decodedToken
+    try {
+      decodedToken = jwtDecode(payload)
+    } catch (err) {
+      console.error('Failed to decode JWT in setToken', err)
+      console.info('Clearing invalid token from state')
+      commit({ type: 'logout' })
+      return
+    }
 
     commit({
       type: "setToken",
@@ -240,7 +254,13 @@ const actions = {
   setTokenFromLocalStorage({ commit }, payload) {
     let decodedToken = Vue.ls.get('auth-decodedToken')
     if (_.isNil(decodedToken)) {
-      decodedToken = jwtDecode(payload)
+      try {
+        decodedToken = jwtDecode(payload)
+      } catch (err) {
+        console.error('Failed to decode JWT from localStorage', err)
+        console.info('Clearing invalid token from localStorage')
+        return commit({ type: 'logout' })
+      }
     }
 
     const expiry = moment(decodedToken.exp * 1000)
@@ -292,7 +312,13 @@ const actions = {
           throw "Missing JWT"
         }
 
-        const decodedToken = jwtDecode(response.data.token)
+        let decodedToken
+        try {
+          decodedToken = jwtDecode(response.data.token)
+        } catch (err) {
+          console.error('Failed to decode JWT during token refresh', err)
+          throw "Invalid JWT received from server"
+        }
 
         Vue.ls.set('auth-token-last-refreshed', moment().utc())
 
