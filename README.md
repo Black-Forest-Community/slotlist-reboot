@@ -33,7 +33,7 @@ cd slotlist-reboot
 2. **Set up environment variables** (optional - auto-created by start.sh):
 Create a `.env` file in the `backend/` directory:
 ```bash
-# Steam API key (optional for development - use dev login instead)
+# Steam API key (optional for development - use backend dev-login endpoint instead)
 CONFIG_STEAM_API_SECRET=your-steam-api-key-here
 
 # Development defaults (auto-configured)
@@ -159,7 +159,7 @@ For local development and testing, you can bypass Steam authentication:
 
 #### Backend Development Endpoint
 
-The backend provides a development-only login endpoint:
+The backend provides a development-only login endpoint for testing:
 - **Endpoint**: `POST /api/v1/auth/dev-login`
 - **Only available when**: `DEBUG=True`
 - **Request body**:
@@ -170,18 +170,15 @@ The backend provides a development-only login endpoint:
   }
   ```
 
-#### Frontend Development Login
-
-The frontend includes a hidden development login form that appears when:
-1. **Automatic**: When `BASE_API_URL` contains `localhost` (Docker setup)
-2. **Manual**: Visit `/login?dev=true` to force-show the development login
-
 **How to use**:
-1. Start the application with Docker Compose
-2. Go to http://localhost:3000/login
-3. The development login form will appear automatically
-4. Enter any nickname (Steam ID is optional)
-5. Click "Login (Development)" to authenticate
+You can test the development login endpoint using curl or any HTTP client:
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"nickname": "TestUser"}'
+```
+
+The endpoint will return a JWT token that can be used for authenticated requests.
 
 **Features**:
 - Creates user accounts automatically
@@ -226,9 +223,9 @@ docker-compose exec backend python manage.py test
 - Wait for database to fully initialize (health check)
 
 **Can't log in / Steam authentication issues**:
-- Use development authentication: Go to `/login?dev=true`
-- Or set Steam API key in `backend/.env`
-- Development login automatically appears when using Docker Compose
+- For development testing, use the backend dev-login endpoint (see Authentication section)
+- Or set a valid Steam API key in `backend/.env`
+- Ensure DEBUG=True is set when using development authentication
 
 ### Development Tips
 
