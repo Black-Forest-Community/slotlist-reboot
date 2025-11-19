@@ -1,16 +1,19 @@
 <template>
   <b-jumbotron header="Über slotlist.online">
     <p class="text-justify">
-      <router-link :to="{name: 'home'}">slotlist.online</router-link> wurde von
-      <a href="https://github.com/MorpheusXAUT">MorpheusXAUT</a> entwickelt, da das andauernde Neu-Registrieren bei zahllosen ArmA-Communities, nur um bei deren Missionen mitzuspielen, nervig wurde. Das Tool erlaubt eine einfachere Erstellung und Verwaltung von Missionen und bietet schnellen und direkten Zugang für alle Benutzer - alles was dafür benötigt wird, ist ein Steam Account - und diesen sollte jeder hoffentlich haben, ansonsten wird das ArmA-Spielen schwer
-      <i class="fa fa-smile-o"></i>
+      <router-link :to="{name: 'home'}">slotlist.online</router-link> ist ein Missionsplanungs- und Slotlist-Verwaltungssystem für die ArmA-Community. Die Plattform vereinfacht die Erstellung und Verwaltung von Missionen und bietet allen Benutzern mit nur einem Steam-Account einfachen Zugang.
       <br>
-      <br>Dieser Service wird gratis und ohne jegliche Garantie über Verfügbarkeit oder Erreichbarkeit angeboten - wir können
-      <router-link :to="{name: 'home'}">slotlist.online</router-link> jederzeit und ohne weitere Vorwarnungen beendigen. Da es unser Ziel ist, ein einfaches Mittel für eine breite Anzahl an ArmA-Enthusiasten zur Verfügung zu stellen, bemühen wir uns, die höchste Verfügbarkeit und Langlebigkeit zu erreichen und freuen uns dabei über jedes Feedback.
+      <br>Ursprünglich von <a href="https://github.com/MorpheusXAUT">MorpheusXAUT</a> entwickelt, wird das Projekt nun von Black Forest als Open-Source-Lösung für die ArmA-Community gepflegt und weiterentwickelt.
+      <br>
+      <br>Dieser Service wird kostenlos angeboten. Während wir hohe Verfügbarkeit und Zuverlässigkeit anstreben, wird der Service ohne Garantien bereitgestellt. Wir freuen uns über Feedback und Verbesserungsvorschläge zur Verbesserung der Plattform.
     </p>
     <h4>Entwicklung</h4>
     <p class="text-justify">
       <router-link :to="{name: 'home'}">slotlist.online</router-link> wird aktuell von Black Forest entwickelt.
+      <dl class="row">
+        <dd class="col-9">
+          <span v-show="frontendVersion">{{ frontendVersion }}</span>
+        </dd>
         <dt class="col-1">Source Code</dt>
         <dd class="col-2">
           <a href="https://github.com/Black-Forest-Community/slotlist-reboot">
@@ -28,7 +31,7 @@
       <dl class="row">
         <dt class="col-sm-3">öffne einen Fehlerbericht auf GitHub</dt>
         <dd class="col-sm-9">
-          <a href="https://github.com/MorpheusXAUT/slotlist-frontend/issues">Fehler-Tracker</a>
+          <a href="https://github.com/Black-Forest-Community/slotlist-reboot/issues">Fehler-Tracker</a>
         </dd>
         <dt class="col-sm-3">schick uns eine Email</dt>
         <dd class="col-sm-9">
@@ -40,37 +43,7 @@
     </p>
     <h4>Spezielle Danksagungen</h4>
     <p>
-      Zuletzt gibt es noch einige Leute, bei denen ich, MorpheusXAUT, mich bedanken möchte (in keiner bestimmten Reihenfolge):
-      <dl class="row">
-        <dt class="col-sm-2">
-          <a href="https://github.com/Regner">Regner</a>
-        </dt>
-        <dd class="col-sm-10">dafür, dass er mir beim Start des Projektes und dem Einrichten von Allem geholfen und meine Fragenbombardierungen ertragen hat</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] LeWarz</a>
-        </dt>
-        <dd class="col-sm-10">für das Vorschlagen von Features und Funktionalitäten, dem Testen der Services und dem allgemeinen Feedback</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] Belbo</a>
-        </dt>
-        <dd class="col-sm-10">für Feature-Vorschläge und -Feedback sowie dem Korrekturlesen meiner teils wirren Übersetzungen</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] Sinus</a>
-        </dt>
-        <dd class="col-sm-10">für Feedback zum Aufbau und Design der Seite, allgemeinem Testing und dem Füllen meiner Datenbank mit Datenmüll</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] buur</a>
-        </dt>
-        <dd class="col-sm-10">für konstantes Feedback und Verbesserungsvorschläge und das Testen aller möglichen Funktionalitäten</dd>
-        <dt class="col-sm-2">
-          <a href="https://task-force-wolf.de">[TFW] Isaac</a>
-        </dt>
-        <dd class="col-sm-10">für Feedback, Verbesserungsvorschläge und Fehlerberichte</dd>
-        <dt class="col-sm-2">
-          <a href="http://www.jaegerzug-achilles.de">[JgZg-A] Steff</a>
-        </dt>
-        <dd class="col-sm-10">für Feature-Vorschläge und die Übersetzung ins Österreichische</dd>
-      </dl>
+      Dieses Projekt baut auf der exzellenten Grundlage auf, die von <a href="https://github.com/MorpheusXAUT">MorpheusXAUT</a> geschaffen wurde, sowie auf der Unterstützung der ArmA-Community. Besonderen Dank an alle Mitwirkenden und Tester, die slotlist.online über die Jahre geholfen haben, sich zu verbessern.
     </p>
   </b-jumbotron>
 </template>

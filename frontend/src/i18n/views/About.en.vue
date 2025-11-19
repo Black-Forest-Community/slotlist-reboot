@@ -1,12 +1,11 @@
 <template>
   <b-jumbotron header="About slotlist.online">
     <p class="text-justify">
-      <router-link :to="{name: 'home'}">slotlist.online</router-link> was created by
-      <a href="https://github.com/MorpheusXAUT">MorpheusXAUT</a> due to being fed up of having to register in countless ArmA community forums just to participate in ArmA missions. The tools allows for easier creating and management of missions and provides easy and direct access to all users - all that's required is a Steam account, and you should already have that, otherwise you wouldn't be playing ArmA
-      <i class="fa fa-smile-o"></i>
+      <router-link :to="{name: 'home'}">slotlist.online</router-link> is a mission planning and slotlist management system for the ArmA community. The platform simplifies mission creation and management, providing easy access to all users with just a Steam account.
       <br>
-      <br> This service is provided to you for free without any guarantees of uptime or availability - we might shut down
-      <router-link :to="{name: 'home'}">slotlist.online</router-link> without any additional warnings at any time. Since it's our goal to provide an easy tool to a broad number of ArmA enthusiats, we aim for the highest availability and longevity possible and thus appreciate any feedback you have for us.
+      <br>Originally created by <a href="https://github.com/MorpheusXAUT">MorpheusXAUT</a>, the project is now maintained and developed by Black Forest as an open-source solution for the ArmA community.
+      <br>
+      <br>This service is provided free of charge. While we strive for high availability and reliability, the service is provided as-is without guarantees. We welcome your feedback and suggestions to help improve the platform.
     </p>
     <h4>Development</h4>
     <p class="text-justify">
@@ -44,37 +43,7 @@
     </p>
     <h4>Special thanks &amp; credits</h4>
     <p>
-      Last, but not least, there's a few people that I, MorpheusXAUT, would like to thank (in no particular order):
-      <dl class="row">
-        <dt class="col-sm-2">
-          <a href="https://github.com/Regner">Regner</a>
-        </dt>
-        <dd class="col-sm-10">for helping me start this project, set everything up and not complaining about my question bombardment</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] LeWarz</a>
-        </dt>
-        <dd class="col-sm-10">for suggesting features and functionality, testing the service and providing general feedback</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] Belbo</a>
-        </dt>
-        <dd class="col-sm-10">for feature suggestions and feedback as well as proofreading my partly random translations</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] Sinus</a>
-        </dt>
-        <dd class="col-sm-10">for feedback regarding the structure and design of the site, general testing and filling my database with trash data</dd>
-        <dt class="col-sm-2">
-          <a href="http://spezialeinheit-luchs.de">[SeL] buur</a>
-        </dt>
-        <dd class="col-sm-10">for constant feedback and suggestions as well as testing all different kinds of functionality</dd>
-        <dt class="col-sm-2">
-          <a href="https://task-force-wolf.de">[TFW] Isaac</a>
-        </dt>
-        <dd class="col-sm-10">for feedback, suggestions and bug reports</dd>
-        <dt class="col-sm-2">
-          <a href="http://www.jaegerzug-achilles.de">[JgZg-A] Steff</a>
-        </dt>
-        <dd class="col-sm-10">for feature suggestions and providing an Austrian translation</dd>
-      </dl>
+      This project builds on the excellent foundation created by <a href="https://github.com/MorpheusXAUT">MorpheusXAUT</a> and the support of the ArmA community. Special thanks to all contributors and testers who have helped improve slotlist.online over the years.
     </p>
   </b-jumbotron>
 </template>
