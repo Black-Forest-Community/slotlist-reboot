@@ -33,9 +33,6 @@
           <em>NAME</em> is deprecated and will be removed by
           <em>DATE</em>. Please see
           <em>LINK</em> for details."</code>
-        Deprecated endpoints should
-        <strong>not</strong> be used and applications migrationed to the newest version as soon as possible. All deprecation notices will also be posted to the Discord server's
-        <code>#announcements-api</code> channel.
         <br>
         <br>Whilst some endpoints such as mission creation, slot registration or likewise required authentication (via Steam SSO), many endpoints - especially the overview ones like mission list and details - can be retrieved unauthenticated by everyone. At the moment, there is no easy way for an external application to authenticate with the
         <router-link :to="{name: 'home'}">slotlist.online</router-link> backend since the Steam SSO login redirects to our pages. In the future, we might provide an API key page for users to allow external apps to act on their behalf.
@@ -50,7 +47,7 @@
         <br>
         <br>Should you run into any issues with the API, please open an issues on our
         <a href="https://github.com/MorpheusXAUT/slotlist-backend/issues">backend repository issue tracker</a> on GitHub or use any of the other contact methods mentioned on the
-        <router-link :to="{name: 'about'}">About</router-link> page to contact us. We're grateful for any report or suggestion - questions are best asked in our support Discord.
+        <router-link :to="{name: 'about'}">About</router-link> page to contact us.
       </p>
     </b-jumbotron>
   </div>

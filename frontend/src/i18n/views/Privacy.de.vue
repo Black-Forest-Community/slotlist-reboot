@@ -67,9 +67,7 @@
       <br>
       <br>
       <h4>Änderungen an dieser Datenschutzerklärung</h4>
-      Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Wir werde Sie über jegliche Änderungen informieren, indem wir die neue, aktualisierte Datenschutzerklärung auf dieser Seite sowie eine Ankündigung im
-      <code>#announcements</code>-Channel in unserem
-      <a href="https://discord.gg/QZ5HpwT">Support-Discord-Server</a> veröffentlichen werden.
+      Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Wir werde Sie über jegliche Änderungen auf GitHub informieren.
       <br>Wir raten Ihnen, diese Erklärung regelmäßig auf Änderungen zu überprüfen, da diese sofort gültig sind, sobald sie auf dieser Seite veröffentlicht werden.
       <br>
       <br>

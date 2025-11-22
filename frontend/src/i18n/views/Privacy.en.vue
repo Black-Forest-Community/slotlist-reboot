@@ -67,9 +67,7 @@
       <br>
       <br>
       <h4>Changes to this privacy policy</h4>
-      We may update this privacy policy from time to time. We will notify you of any changes by posting the new, updated privacy policy on this page as well as a notice in the
-      <code>#announcements</code> channel in our
-      <a href="https://discord.gg/QZ5HpwT">support Discord server</a>.
+      We may update this privacy policy from time to time. We will notify you of any changes by posting the new, updated privacy policy on this page as well as a notice on GitHub.
       <br>We advise you to review this privacy policy periodically for any changes as they are effective when posted on this page.
       <br>
       <br>
