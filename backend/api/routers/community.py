@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 from django.utils.text import slugify
 from api.models import Community
-from api.schemas import CommunitySchema, CommunityCreateSchema, CommunityUpdateSchema
+from api.schemas import CommunitySchema, CommunityCreateSchema, CommunityUpdateSchema, CommunityApplicationCreateSchema
 from api.auth import has_permission
 
 router = Router()
@@ -345,7 +345,7 @@ def get_community_application_status(request, slug: str):
 
 
 @router.post('/{slug}/applications')
-def create_community_application(request, slug: str):
+def create_community_application(request, slug: str, payload: 'CommunityApplicationCreateSchema'):
     """Submit an application to join a community"""
     from api.models import CommunityApplication, User
     
@@ -371,12 +371,16 @@ def create_community_application(request, slug: str):
     if existing_app:
         return 400, {'message': 'You have already submitted an application to this community'}
     
+    # Validate that application text is not empty (just whitespace)
+    if not payload.application_text or not payload.application_text.strip():
+        return 400, {'message': 'Application text is required and cannot be empty'}
+    
     # Create the application
     application = CommunityApplication.objects.create(
         user=user,
         community=community,
         status='submitted',
-        application_text=''  # Default empty text as the API doesn't seem to accept text in the POST
+        application_text=payload.application_text
     )
     
     return {

@@ -126,7 +126,7 @@ const actions = {
   applyToCommunity({ dispatch }, payload) {
     dispatch('startWorking', i18n.t('store.applyToCommunity'))
 
-    return CommunitiesApi.applyToCommunity(payload)
+    return CommunitiesApi.applyToCommunity(payload.communitySlug, payload.applicationText)
       .then(function (response) {
         if (response.status !== 200) {
           console.error(response)
@@ -150,7 +150,7 @@ const actions = {
           scrollToTop: true
         })
 
-        dispatch('getCommunityApplicationStatus', payload)
+        dispatch('getCommunityApplicationStatus', payload.communitySlug)
 
         dispatch('stopWorking', i18n.t('store.applyToCommunity'))
       }).catch((error) => {

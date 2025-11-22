@@ -108,6 +108,10 @@ class CommunityApplicationSchema(Schema):
     application_text: str
 
 
+class CommunityApplicationCreateSchema(Schema):
+    application_text: str = Field(..., min_length=1, description="Application text (required)")
+
+
 class NotificationSchema(Schema):
     uid: UUID
     notification_type: str
