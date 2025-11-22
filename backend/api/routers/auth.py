@@ -2,12 +2,11 @@ from ninja import Router
 from ninja.security import HttpBearer
 from django.shortcuts import get_object_or_404
 from django.conf import settings
-from django.contrib.auth import authenticate
 from django.http import HttpRequest
 from typing import Optional
 from api.models import User
 from api.schemas import AuthResponseSchema, ErrorResponseSchema
-from api.auth import generate_jwt, get_or_create_user_from_django_user, decode_jwt
+from api.auth import generate_jwt, decode_jwt
 from api.steam_auth import steam_service
 from pydantic import BaseModel
 
@@ -50,16 +49,6 @@ class JWTAuth(HttpBearer):
 
 
 router = Router()
-
-
-class DevLoginSchema(BaseModel):
-    nickname: str
-    steam_id: str = None
-
-
-class DjangoLoginSchema(BaseModel):
-    username: str
-    password: str
 
 
 class SteamLoginSchema(BaseModel):
@@ -183,160 +172,6 @@ def verify_steam_login(request, payload: SteamLoginSchema):
             'nickname': user.nickname,
             'steam_id': user.steam_id,
             'community': None,
-            'active': user.active
-        }
-    }
-
-
-@router.post('/dev-login', response=AuthResponseSchema, auth=None)
-def dev_login(request, credentials: DevLoginSchema):
-    """
-    Development-only login endpoint that bypasses Steam authentication
-    
-    **⚠️ WARNING: Only enabled when DEBUG=True. Never use in production!**
-    
-    This endpoint allows testing authentication flow without Steam OAuth.
-    It creates or logs in a user with the provided credentials.
-    
-    **Authentication:** None required
-    
-    **Request Body:**
-    - `nickname` (str): User nickname
-    - `steam_id` (str, optional): Steam ID (auto-generated if not provided)
-    
-    **Returns:**
-    - `token` (str): JWT token for authenticated user
-    - `user` (object): User information
-    
-    **Example Request:**
-    ```json
-    {
-        "nickname": "TestUser",
-        "steam_id": "76561198000000000"
-    }
-    ```
-    
-    **Errors:**
-    - `403`: Development login disabled (production mode)
-    - `400`: Invalid request data
-    """
-    # Only allow in development mode
-    if not settings.DEBUG:
-        return 403, {'detail': 'Development login is only available in DEBUG mode'}
-    
-    # Generate a fake Steam ID if not provided
-    steam_id = credentials.steam_id
-    if not steam_id:
-        # Generate a fake Steam ID starting with 76561198 (common Steam ID prefix)
-        import random
-        steam_id = f"76561198{random.randint(100000000, 999999999)}"
-    
-    # Get or create user
-    user, created = User.objects.get_or_create(
-        steam_id=steam_id,
-        defaults={
-            'nickname': credentials.nickname,
-            'active': True
-        }
-    )
-    
-    # Update nickname if user already exists
-    if not created and user.nickname != credentials.nickname:
-        user.nickname = credentials.nickname
-        user.save()
-    
-    # Check if user is active
-    if not user.active:
-        return 403, {'detail': 'User account is deactivated'}
-    
-    # Generate JWT
-    token = generate_jwt(user)
-    
-    return {
-        'token': token,
-        'user': {
-            'uid': user.uid,
-            'nickname': user.nickname,
-            'steam_id': user.steam_id,
-            'community': {
-                'uid': str(user.community.uid),
-                'name': user.community.name,
-                'tag': user.community.tag,
-                'slug': user.community.slug
-            } if user.community else None,
-            'active': user.active
-        }
-    }
-
-
-@router.post('/django-login', response=AuthResponseSchema, auth=None)
-def django_login(request, credentials: DjangoLoginSchema):
-    """
-    Django username/password authentication endpoint
-    
-    **Only available in development mode (DEBUG=True)**
-    
-    Authenticates against Django's built-in user system and creates
-    corresponding User records in the slotlist system.
-    
-    **Authentication:** None required
-    
-    **Request Body:**
-    - `username` (str): Django username
-    - `password` (str): Django password
-    
-    **Returns:**
-    - `token` (str): JWT token for authenticated user
-    - `user` (object): User information
-    
-    **Example Request:**
-    ```json
-    {
-        "username": "admin",
-        "password": "password123"
-    }
-    ```
-    
-    **Errors:**
-    - `403`: Django login disabled (production mode)
-    - `401`: Invalid credentials
-    - `403`: User account is deactivated
-    """
-    # Only allow in development mode
-    if not settings.DEBUG:
-        return 403, {'detail': 'Django login is only available in DEBUG mode'}
-    
-    # Authenticate against Django users
-    django_user = authenticate(
-        request=request,
-        username=credentials.username,
-        password=credentials.password
-    )
-    
-    if not django_user:
-        return 401, {'detail': 'Invalid credentials'}
-    
-    if not django_user.is_active:
-        return 403, {'detail': 'User account is deactivated'}
-    
-    # Get or create corresponding User record
-    user = get_or_create_user_from_django_user(django_user)
-    
-    # Generate JWT
-    token = generate_jwt(user)
-    
-    return {
-        'token': token,
-        'user': {
-            'uid': user.uid,
-            'nickname': user.nickname,
-            'steam_id': user.steam_id,
-            'community': {
-                'uid': str(user.community.uid),
-                'name': user.community.name,
-                'tag': user.community.tag,
-                'slug': user.community.slug
-            } if user.community else None,
             'active': user.active
         }
     }
