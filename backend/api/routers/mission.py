@@ -8,7 +8,7 @@ from django.utils.text import slugify
 from pydantic import BaseModel
 from api.models import Mission, Community, User, MissionSlotGroup, MissionSlot, ArmaThreeDLC, MissionSlotRegistration
 from api.schemas import (
-    MissionSchema, MissionCreateSchema, MissionUpdateSchema, 
+    MissionCreateSchema, MissionUpdateSchema, 
     MissionSlotGroupCreateSchema, MissionSlotGroupUpdateSchema,
     MissionSlotCreateSchema, MissionSlotUpdateSchema
 )

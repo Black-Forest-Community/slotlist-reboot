@@ -3,11 +3,10 @@ from ninja.security import HttpBearer
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User as DjangoUser
 from django.http import HttpRequest
 from typing import Optional
 from api.models import User
-from api.schemas import AuthResponseSchema, UserSchema, ErrorResponseSchema
+from api.schemas import AuthResponseSchema, ErrorResponseSchema
 from api.auth import generate_jwt, get_or_create_user_from_django_user, decode_jwt
 from api.steam_auth import steam_service
 from pydantic import BaseModel

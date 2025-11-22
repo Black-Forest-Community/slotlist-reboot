@@ -1,10 +1,8 @@
 from ninja import Router
 from django.shortcuts import get_object_or_404
-from typing import List
-from uuid import UUID
 from django.utils.text import slugify
 from api.models import Community
-from api.schemas import CommunitySchema, CommunityCreateSchema, CommunityUpdateSchema
+from api.schemas import CommunityCreateSchema, CommunityUpdateSchema
 from api.auth import has_permission
 
 router = Router()

@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from typing import List
 from uuid import UUID
 from api.models import User, Permission
-from api.schemas import UserSchema, UserDetailSchema, UserUpdateSchema, PermissionSchema
+from api.schemas import UserUpdateSchema, PermissionSchema
 from api.auth import has_permission
 
 router = Router()
