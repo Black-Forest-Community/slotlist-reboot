@@ -108,7 +108,10 @@ export const router = new Router({
     {
       path: '/users',
       name: 'userList',
-      component: UserList
+      component: UserList,
+      meta: {
+        authenticated: true // only logged in users can access this page
+      }
     },
     {
       path: '/users/:userUid',
