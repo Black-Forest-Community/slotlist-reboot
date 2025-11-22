@@ -88,6 +88,7 @@ backend/**/__pycache__/
 backend/*.pyc
 backend/*.pyo
 backend/*.pyd
+backend/media/
 __pycache__/
 **/__pycache__/
 *.pyc
