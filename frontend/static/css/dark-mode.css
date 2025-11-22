@@ -45,7 +45,11 @@
 }
 
 :root[data-theme="dark"] .navbar-brand {
-  color: var(--color-primary);
+  color: #f1f5f9;
+}
+
+:root[data-theme="dark"] .navbar-brand:hover {
+  color: #ffffff;
 }
 
 :root[data-theme="dark"] .nav-link {
@@ -54,7 +58,8 @@
 
 :root[data-theme="dark"] .nav-link:hover,
 :root[data-theme="dark"] .nav-link.router-link-active {
-  color: var(--color-primary);
+  color: #f1f5f9;
+  background-color: var(--color-bg-tertiary);
 }
 
 :root[data-theme="dark"] .navbar-toggler {
