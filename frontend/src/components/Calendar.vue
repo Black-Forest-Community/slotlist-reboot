@@ -3,7 +3,7 @@
     <div class="col-sm-12">
       <div class="card">
         <div class="card-header">
-          <h3>{{ $t('calendar.title') }}</h3>
+          <h3>{{ currentMonth }}</h3>
         </div>
         <div class="card-block">
           <calendar-community-filter></calendar-community-filter>
@@ -41,6 +41,13 @@ export default {
     }
   },
   computed: {
+    currentMonth() {
+      const month = this.$store.getters.missionCalendarCurrentMonth
+      if (month) {
+        return month.locale(this.$i18n.locale).format('MMMM YYYY')
+      }
+      return ''
+    },
     loggedIn() {
       return this.$store.getters.loggedIn
     },

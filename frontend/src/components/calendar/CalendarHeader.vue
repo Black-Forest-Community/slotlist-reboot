@@ -5,7 +5,7 @@
         <i class="fa fa-refresh" :class="{'fa-spin': refreshingMissionsForCalendar}" aria-hidden="true"></i> {{ $t('button.refresh') }}
       </b-btn>
     </div>
-    <div class="col-sm-4">
+    <div class="col-sm-8">
       <b-btn-group>
         <b-btn variant="primary" @click="changeMonth(-1)">
           <i class="fa fa-angle-left" aria-hidden="true"></i> {{ $t('calendar.month.previous') }}
@@ -19,9 +19,6 @@
         </b-btn>
       </b-btn-group>
     </div>
-    <div class="col-sm-4">
-      <div class="calendar-header-month">{{ currentMonth.locale(locale).format('MMMM Y') }}</div>
-    </div>
   </div>
 </template>
 
@@ -32,9 +29,6 @@ export default {
   computed: {
     currentMonth() {
       return this.$store.getters.missionCalendarCurrentMonth
-    },
-    locale() {
-      return this.$i18n.locale
     },
     refreshingMissionsForCalendar() {
       return this.$store.getters.refreshingMissionsForCalendar
@@ -66,9 +60,3 @@ export default {
 </script>
 
 <style>
-.calendar-header-month {
-  text-align: center;
-  font-size: 1.4em;
-  font-weight: bolder;
-}
-</style>
