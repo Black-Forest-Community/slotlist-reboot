@@ -337,6 +337,8 @@ class CommunityAPICompatibilityTests(TestCase):
         """Test POST /api/v1/communities/{communitySlug}/applications - Creates application"""
         response = self.client.post(
             f'/api/v1/communities/{self.test_community.slug}/applications',
+            data={'applicationText': 'I would like to join this community because...'},
+            content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.test_token}'
         )
         
@@ -354,6 +356,30 @@ class CommunityAPICompatibilityTests(TestCase):
             community=self.test_community
         ).delete()
     
+    def test_create_community_application_empty_text(self):
+        """Test POST /api/v1/communities/{communitySlug}/applications - Rejects empty application text"""
+        # Test with empty string
+        response = self.client.post(
+            f'/api/v1/communities/{self.test_community.slug}/applications',
+            data={'applicationText': ''},
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.test_token}'
+        )
+        
+        # Should return 400 Bad Request
+        self.assertEqual(response.status_code, 400)
+        
+        # Test with only whitespace
+        response = self.client.post(
+            f'/api/v1/communities/{self.test_community.slug}/applications',
+            data={'applicationText': '   '},
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.test_token}'
+        )
+        
+        # Should return 400 Bad Request
+        self.assertEqual(response.status_code, 400)
+    
     def test_get_community_application_status(self):
         """Test GET /api/v1/communities/{communitySlug}/applications/status - Returns application status"""
         # Create an application
@@ -361,7 +387,8 @@ class CommunityAPICompatibilityTests(TestCase):
             uid='test-app-uid',
             user=self.test_user,
             community=self.test_community,
-            status='submitted'
+            status='submitted',
+            application_text='Test application text'
         )
         
         response = self.client.get(
@@ -376,6 +403,7 @@ class CommunityAPICompatibilityTests(TestCase):
         data = response.json()
         self.assertIn('application', data)
         self.assertEqual(data['application']['status'], 'submitted')
+        self.assertEqual(data['application']['applicationText'], 'Test application text')
         
         # Cleanup
         app.delete()
