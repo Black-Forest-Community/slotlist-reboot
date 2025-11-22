@@ -6,23 +6,20 @@
         <b-btn variant="secondary" @click="refreshCommunityMembers">
           <i class="fa fa-refresh" aria-hidden="true"></i> {{ $t('button.refresh') }}
         </b-btn>
-        <b-btn variant="primary" v-if="loggedIn" :disabled="isCommunityMember || communityApplicationStatus !== null" v-b-modal.communityApplicationModal>
+        <b-btn variant="primary" v-if="loggedIn" :disabled="isCommunityMember || communityApplicationStatus !== null" @click="applyToCommunity">
           <i class="fa fa-user-plus" aria-hidden="true"></i> {{ $t('button.apply') }}
         </b-btn>
       </div>
     </div>
-    <community-application-modal v-if="loggedIn"></community-application-modal>
   </div>
 </template>
 
 <script>
 import CommunityMembersTable from './CommunityMembersTable.vue'
-import CommunityApplicationModal from './modals/CommunityApplicationModal.vue'
 
 export default {
   components: {
-    CommunityMembersTable,
-    CommunityApplicationModal
+    CommunityMembersTable
   },
   computed: {
     communityApplicationStatus() {
@@ -44,6 +41,9 @@ export default {
     }
   },
   methods: {
+    applyToCommunity() {
+      this.$store.dispatch('applyToCommunity', this.$route.params.communitySlug)
+    },
     refreshCommunityMembers() {
       this.$store.dispatch('getCommunityDetails', this.$route.params.communitySlug)
     }

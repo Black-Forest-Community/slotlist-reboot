@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Optional, List, Any
 from uuid import UUID
 from ninja import Schema, Field
-from pydantic import field_validator
 
 
 class CommunitySchema(Schema):
@@ -107,18 +106,6 @@ class CommunityApplicationSchema(Schema):
     community: CommunitySchema
     status: str
     application_text: str
-
-
-class CommunityApplicationCreateSchema(Schema):
-    application_text: str = Field(..., min_length=1, description="Application text (required)")
-    
-    @field_validator('application_text')
-    @classmethod
-    def validate_application_text(cls, v: str) -> str:
-        """Validate that application text is not empty or only whitespace"""
-        if not v or not v.strip():
-            raise ValueError('Application text is required and cannot be empty or only whitespace')
-        return v
 
 
 class NotificationSchema(Schema):

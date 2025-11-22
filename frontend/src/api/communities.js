@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 export const v1 = {
-  applyToCommunity(communitySlug, applicationText) {
-    return axios.post(`/v1/communities/${communitySlug}/applications`, { applicationText })
+  applyToCommunity(communitySlug) {
+    return axios.post(`/v1/communities/${communitySlug}/applications`)
   },
   checkCommunitySlugAvailability(missionSlug) {
     return axios.get(`/v1/communities/slugAvailable?slug=${missionSlug}`)
