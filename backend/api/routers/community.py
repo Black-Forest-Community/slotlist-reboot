@@ -332,7 +332,6 @@ def get_community_application_status(request, slug: str):
             'application': {
                 'uid': str(application.uid),
                 'status': application.status,
-                'applicationText': application.application_text,
                 'createdAt': application.created_at.isoformat() if application.created_at else None,
                 'updatedAt': application.updated_at.isoformat() if application.updated_at else None
             }
@@ -373,8 +372,7 @@ def create_community_application(request, slug: str):
     application = CommunityApplication.objects.create(
         user=user,
         community=community,
-        status='submitted',
-        application_text=''  # Default empty text as the API doesn't seem to accept text in the POST
+        status='submitted'
     )
     
     return {

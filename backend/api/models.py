@@ -396,7 +396,6 @@ class CommunityApplication(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='applications', db_column='userUid')
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name='applications', db_column='communityUid')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='submitted')
-    application_text = models.TextField(db_column='applicationText')
     created_at = models.DateTimeField(auto_now_add=True, db_column='createdAt')
     updated_at = models.DateTimeField(auto_now=True, db_column='updatedAt')
 

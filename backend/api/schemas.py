@@ -105,7 +105,6 @@ class CommunityApplicationSchema(Schema):
     user: UserSchema
     community: CommunitySchema
     status: str
-    application_text: str
 
 
 class NotificationSchema(Schema):
