@@ -1,0 +1,343 @@
+/* Dark Mode Theme for slotlist.online */
+
+/* Dark mode color variables */
+:root[data-theme="dark"] {
+  /* Colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-light: #1e3a8a;
+  --color-secondary: #94a3b8;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  
+  /* Neutrals - Dark theme */
+  --color-bg: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+  --color-border: #334155;
+  --color-border-light: #475569;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  
+  /* Shadows - adjusted for dark mode */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+}
+
+/* Dark mode specific adjustments */
+:root[data-theme="dark"] body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .white-overlay {
+  background-color: rgba(15, 23, 42, 0.9);
+}
+
+:root[data-theme="dark"] .navbar {
+  background: var(--color-bg-secondary);
+  border-bottom-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .navbar-brand {
+  color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .nav-link {
+  color: var(--color-text-secondary);
+}
+
+:root[data-theme="dark"] .nav-link:hover,
+:root[data-theme="dark"] .nav-link.router-link-active {
+  color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .navbar-toggler {
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .card {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .card-header,
+:root[data-theme="dark"] .card-footer {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .table {
+  background-color: var(--color-bg-secondary);
+}
+
+:root[data-theme="dark"] .table thead th {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .table tbody tr:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+:root[data-theme="dark"] .table-striped tbody tr:nth-child(odd) {
+  background-color: rgba(51, 65, 85, 0.5);
+}
+
+:root[data-theme="dark"] .form-control {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .form-control:focus {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .form-control:disabled {
+  background-color: var(--color-bg);
+  opacity: 0.5;
+}
+
+:root[data-theme="dark"] .btn-secondary {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-border-light);
+  border-color: var(--color-border-light);
+}
+
+:root[data-theme="dark"] .modal-content {
+  background-color: var(--color-bg-secondary);
+}
+
+:root[data-theme="dark"] .modal-header,
+:root[data-theme="dark"] .modal-footer {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .alert-success {
+  background-color: #064e3b;
+  border-color: #065f46;
+  color: #d1fae5;
+}
+
+:root[data-theme="dark"] .alert-danger {
+  background-color: #7f1d1d;
+  border-color: #991b1b;
+  color: #fee2e2;
+}
+
+:root[data-theme="dark"] .alert-warning {
+  background-color: #78350f;
+  border-color: #92400e;
+  color: #fef3c7;
+}
+
+:root[data-theme="dark"] .alert-info {
+  background-color: #1e3a8a;
+  border-color: #1e40af;
+  color: #dbeafe;
+}
+
+:root[data-theme="dark"] .page-link {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .page-link:hover {
+  background-color: var(--color-border-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .page-item.active .page-link {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+:root[data-theme="dark"] .footer {
+  background-color: var(--color-bg-secondary);
+  border-top-color: var(--color-border);
+}
+
+/* Calendar dark mode styles */
+:root[data-theme="dark"] .calendar-day {
+  background: rgba(100, 116, 139, 0.1);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .calendar-day-current-month {
+  background: var(--color-bg-secondary);
+}
+
+:root[data-theme="dark"] .calendar-day-current-month .calendar-day-number {
+  color: var(--color-text-secondary);
+}
+
+:root[data-theme="dark"] .calendar-day-number {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .calendar-day-today {
+  background-color: rgba(16, 185, 129, 0.15);
+}
+
+:root[data-theme="dark"] .calendar-day-today .calendar-day-number {
+  color: var(--color-success);
+}
+
+:root[data-theme="dark"] .calendar-day-weekend .calendar-day-number {
+  color: rgba(239, 68, 68, 0.8);
+}
+
+:root[data-theme="dark"] .calendar-week-header {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background-color: var(--color-bg-tertiary);
+}
+
+:root[data-theme="dark"] .calendar-weeks-header {
+  border-color: var(--color-border);
+}
+
+/* Jumbotron dark mode */
+:root[data-theme="dark"] .jumbotron {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .jumbotron h1,
+:root[data-theme="dark"] .jumbotron h2,
+:root[data-theme="dark"] .jumbotron h3,
+:root[data-theme="dark"] .jumbotron .lead {
+  color: var(--color-text);
+}
+
+/* Popover dark mode */
+:root[data-theme="dark"] .popover {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .popover-header {
+  background-color: var(--color-bg-tertiary);
+  border-bottom-color: var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .popover-body {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .popover .arrow::before {
+  border-top-color: var(--color-border);
+  border-bottom-color: var(--color-border);
+  border-left-color: var(--color-border);
+  border-right-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .popover .arrow::after {
+  border-top-color: var(--color-bg-secondary);
+  border-bottom-color: var(--color-bg-secondary);
+  border-left-color: var(--color-bg-secondary);
+  border-right-color: var(--color-bg-secondary);
+}
+
+:root[data-theme="dark"] .bs-popover-top .arrow::after,
+:root[data-theme="dark"] .bs-popover-auto[x-placement^="top"] .arrow::after {
+  border-top-color: var(--color-bg-secondary);
+}
+
+:root[data-theme="dark"] .bs-popover-bottom .arrow::after,
+:root[data-theme="dark"] .bs-popover-auto[x-placement^="bottom"] .arrow::after {
+  border-bottom-color: var(--color-bg-secondary);
+}
+
+:root[data-theme="dark"] .bs-popover-left .arrow::after,
+:root[data-theme="dark"] .bs-popover-auto[x-placement^="left"] .arrow::after {
+  border-left-color: var(--color-bg-secondary);
+}
+
+:root[data-theme="dark"] .bs-popover-right .arrow::after,
+:root[data-theme="dark"] .bs-popover-auto[x-placement^="right"] .arrow::after {
+  border-right-color: var(--color-bg-secondary);
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-base);
+  color: white;
+  font-size: 1.5rem;
+}
+
+.dark-mode-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-xl);
+}
+
+.dark-mode-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .dark-mode-toggle {
+    bottom: 1rem;
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.25rem;
+  }
+  
+  :root[data-theme="dark"] .table tbody tr {
+    background-color: var(--color-bg-secondary);
+    border-color: var(--color-border);
+  }
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, 
+              border-color 0.3s ease, 
+              color 0.3s ease;
+}
+
+/* Override transitions for elements that shouldn't animate */
+.btn,
+.page-link,
+.nav-link,
+.form-control:focus,
+input[type="search"]:focus,
+input.search:focus,
+.typeahead input:focus {
+  transition: all var(--transition-base) !important;
+}

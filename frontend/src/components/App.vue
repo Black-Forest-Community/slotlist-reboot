@@ -106,6 +106,9 @@
         </div>
       </div>
     </footer>
+    <button class="dark-mode-toggle" @click="toggleDarkMode" :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+      <i class="fa" :class="darkMode ? 'fa-sun-o' : 'fa-moon-o'"></i>
+    </button>
   </div>
 </template>
 
@@ -147,6 +150,11 @@ export default {
 
     this.$store.dispatch('setTimezone', timezone)
 
+    const darkMode = this.$ls.get('dark-mode')
+    if (darkMode === 'true') {
+      document.documentElement.setAttribute('data-theme', 'dark')
+    }
+
     const token = this.$ls.get('auth-token')
     if (!_.isNil(token)) {
       this.$store.dispatch('setTokenFromLocalStorage', token)
@@ -175,7 +183,8 @@ export default {
   data() {
     return {
       initialTokenRefresh: true,
-      navbarCollapsed: true
+      navbarCollapsed: true,
+      darkMode: this.$ls.get('dark-mode') === 'true'
     }
   },
   computed: {
@@ -248,6 +257,12 @@ export default {
     },
     setLocale(locale) {
       this.$store.dispatch('setLocale', locale)
+    },
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode
+      const theme = this.darkMode ? 'dark' : 'light'
+      document.documentElement.setAttribute('data-theme', theme)
+      this.$ls.set('dark-mode', this.darkMode.toString())
     }
   }
 }
