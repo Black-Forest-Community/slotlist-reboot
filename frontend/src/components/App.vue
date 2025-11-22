@@ -153,6 +153,13 @@ export default {
     const darkMode = this.$ls.get('dark-mode')
     if (darkMode === 'true') {
       document.documentElement.setAttribute('data-theme', 'dark')
+    } else if (darkMode === null || darkMode === undefined) {
+      // Auto-detect from browser preference if user hasn't set a preference
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        this.$ls.set('dark-mode', 'true')
+      }
     }
 
     const token = this.$ls.get('auth-token')
@@ -181,10 +188,14 @@ export default {
     this.dispatch('clearMissions')
   },
   data() {
+    const savedDarkMode = this.$ls.get('dark-mode')
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    const darkMode = savedDarkMode === 'true' || (savedDarkMode === null && prefersDark)
+    
     return {
       initialTokenRefresh: true,
       navbarCollapsed: true,
-      darkMode: this.$ls.get('dark-mode') === 'true'
+      darkMode: darkMode
     }
   },
   computed: {
