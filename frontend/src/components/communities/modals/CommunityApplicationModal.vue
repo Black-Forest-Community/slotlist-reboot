@@ -37,26 +37,29 @@ export default {
   },
   computed: {
     applicationTextFeedback() {
-      if (_.isEmpty(this.applicationText) || _.isEmpty(this.applicationText.trim())) {
+      if (this.isTextEmpty()) {
         return this.$t('community.application.text.feedback.required')
       }
 
       return ''
     },
     applicationTextState() {
-      if (_.isEmpty(this.applicationText) || _.isEmpty(this.applicationText.trim())) {
+      if (this.isTextEmpty()) {
         return 'danger'
       }
 
       return 'success'
     },
     isApplicationTextValid() {
-      return !_.isEmpty(this.applicationText) && !_.isEmpty(this.applicationText.trim())
+      return !this.isTextEmpty()
     }
   },
   methods: {
     hideApplicationModal() {
       this.$refs.communityApplicationModal.hide()
+    },
+    isTextEmpty() {
+      return _.isEmpty(this.applicationText) || _.isEmpty(this.applicationText.trim())
     },
     resetApplicationText() {
       this.applicationText = ''

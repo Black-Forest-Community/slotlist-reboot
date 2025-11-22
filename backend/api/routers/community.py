@@ -371,11 +371,7 @@ def create_community_application(request, slug: str, payload: 'CommunityApplicat
     if existing_app:
         return 400, {'message': 'You have already submitted an application to this community'}
     
-    # Validate that application text is not empty (just whitespace)
-    if not payload.application_text or not payload.application_text.strip():
-        return 400, {'message': 'Application text is required and cannot be empty'}
-    
-    # Create the application
+    # Create the application (validation is handled by schema)
     application = CommunityApplication.objects.create(
         user=user,
         community=community,
