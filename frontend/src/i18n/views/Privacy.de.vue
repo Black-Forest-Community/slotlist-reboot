@@ -1,80 +1,142 @@
 <template>
-  <b-jumbotron header="Datenschutzerklärung" lead="Zuletzt aktualisiert: <strong>2017-11-15 14:28 CET</strong>.">
+  <b-jumbotron header="Datenschutzerklärung" lead="Zuletzt aktualisiert: <strong>2025-11-22</strong>">
     <p class="text-justify">
+      <h4>1. Verantwortlicher und Übersicht</h4>
       Das
-      <router-link :to="{name: 'home'}">slotlist.online</router-link> Team ("wir", "uns" oder "unser") betreibt die
-      <router-link :to="{name: 'home'}">slotlist.online</router-link>-Website (der "Dienst").
-      <br>
-      <br>Diese Seite informiert über die Richtlinen zur Sammlung, Verarbeitung und Weitergabe von persönlichen Daten, die bei der Benutzung unseres Dienstes gesammelt werden.
-      <br>
-      <br>Ihre Privatsphäre und Informationssicherheit ist uns sehr wichtig - wir werden Ihre Daten
-      <strong>nicht</strong> an Dritte weitergeben, außer wie in dieser Datenschutzerklärung beschreiben.
-      <br>
-      <br>Wir nutzen Ihre persönlichen Daten, um den Dienst anzubieten und dessen Qualität kontinuierlich verbessern zu können. Durch die Nutzung des Dienstes stimmen Sie der Sammlung und Verarbeitung Ihrer Daten in Übereinstimmung dieser Datenschutzerklärung zu. Sollten Sie mit irgendeinem Punkt dieser Erklärung nicht einverstanden sein, so verlassen Sie die Seite sofort und benutzen Sie unseren Dienst nicht weiter, da eine weitere Verwendung automatisch als Zustimmung gewertet wird.
-      <br>
-      <h4>Datensammlung und -verwendung</h4>
-      Während der Verwendung unseres Dienstes fragen wir Sie nach Bedarf nach bestimmten, persönlich identifizierbaren Informationen, über die Sie kontaktiert oder identifiziert werden könnten.
-      <br>Diese Daten beinhalten - aber sind nicht beschränkt auf - Ihre Steam ID und Nickname (wie aus den öffentlichen verfügbaren Daten Ihres Steam-Profils und des Steam Single Sign-on ersichtlich) sowie alle anderen, von Ihnen bei diesem Dienst eingegebenen Informationen.
-      <br>Unser Dienst erhält niemals weitere Details über Ihren Steam Account abgesehen von der
-      <code>Steam 64 ID</code> und dem Nickname, der beim ersten Login in unseren Dienst festgelegt wurde (da zu diesem Zeitpunkt ein Account in unserem Dienst erstellt wird). Der Nickname kann jederzeit über die
-      <router-link :to="{name: 'account'}">Account-Seite</router-link> geändert werden.
-      <strong>Wir erhalten niemals Ihren Steam-Benutzernamen, Ihr Passwort oder die Emailadresse, die mit Ihrem Steam-Account verknüpft ist.</strong>
+      <router-link :to="{name: 'home'}">slotlist.online</router-link> Team ("wir", "uns" oder "unser") betreibt die Website
+      <router-link :to="{name: 'home'}">slotlist.online</router-link> (der "Dienst").
+      <br>Diese Datenschutzerklärung informiert Sie über die Erhebung, Verarbeitung und Nutzung Ihrer personenbezogenen Daten bei der Nutzung unseres Dienstes.
       <br>
       <br>
-      <h4>Logdaten</h4>
-      Wir speichern die Informationen, die von Ihrem Browser bei der Verwendung unseres Dienstes übertragen werden ("Logdaten"). Diese Logdaten können identifizierbare Informationen wie die Internet Protocol Adresse ("IP") Ihres Computers, den Browsertyp, die Browserversion, die Seiten unseres Dienstes, die Sie besucht haben, Datum und Uhrzeit Ihrer Dienst-Besuche, die Zeit, die sie auf unseren Seiten verbracht haben sowie andere Statistiken enthalten.
+      <h4>2. Grundsätze der Datenverarbeitung</h4>
+      Ihre Privatsphäre und Informationssicherheit ist uns sehr wichtig. Wir verarbeiten Ihre Daten nur auf Grundlage der gesetzlichen Bestimmungen, insbesondere der Datenschutzgrundverordnung (DSGVO).
       <br>
       <br>
-      <h4>Cookies</h4>
-      Cookies sind Dateien mit kleinem Textinhalt, die von Ihrem Browser auf der Festplatte Ihres Computers abgelegt werden. Cookies können potenziell anonyme, einzigartige Identifizierungsmerkmale enthalten, die von unserem Dienst oder einer dritten Partei, deren Dienste von uns verwendet werden, um unseren Dienst anzubieten, an Ihren Browser geschickt werden.
-      <br>Wir (oder unsere weiteren Dienstanbieter) können Cookies dazu verwenden, um Informationen zur Nutzung unserer Website zu sammeln. Sie können Ihren Browser anweisen, alle Cookies abzulehnen, dadurch könnten jedoch einige Teile des Dienstes nicht mehr vollständig funktionieren.
-      <br>Unser Dienst nutzt aktuell keine zusätzlichen Tracking- oder Speicher-Cookies, unser Dienstanbieter
-      <a href="https://cloudflare.com">Cloudflare</a> kann aber ein Cookie hinzufügen, um Anfragen besser bearbeiten zu können. Weiterhin wird ein Cookie von dem Cookie-Zustimmungs-Popup beim Besuchen unserer Website als Zeichen der Zustimmung gespeichert.
+      <h4>3. Erhebung und Verwendung personenbezogener Daten</h4>
+      <strong>3.1 Bei der Nutzung des Dienstes</strong>
+      <br>Wir erheben und verarbeiten folgende personenbezogene Daten:
+      <ul>
+        <li>Ihre Steam ID 64</li>
+        <li>Ihren Steam-Nickname (aus den öffentlich verfügbaren Daten Ihres Steam-Profils)</li>
+        <li>Alle weiteren Informationen, die Sie aktiv in unserem Dienst eingeben</li>
+      </ul>
+      <strong>Wichtig:</strong> Unser Dienst erhält niemals Ihren Steam-Benutzernamen, Ihr Passwort, die mit Ihrem Steam-Account verknüpfte E-Mail-Adresse oder andere sensible Steam-Account-Daten.
       <br>
       <br>
-      <h4>Dienstanbieter</h4>
-      Wir können dritte Firmen oder Individuen einsetzen, um unsere Dienste zu unterstützen, unsere Dienste für uns anzubieten, um Dienst-bezogene Dienstleistungen anzubieten oder um uns zu helfen, zu analysieren, wie unser Dienst genutzt wird.
-      <br>Diese dritten Parteien haben nur zu den persönlichen Daten Zugang, die für die Verrichtung ihrer zugewiesenen Tätigkeit benötigt werden und sind dazu verpflichtet, diese Daten nicht zu veröffentlichen oder für irgendwelche anderen Zwecke zu verwenden.
-      <br>Zum aktuellen Stand nutzt unser Dienst
-      <a href="https://cloudflare.com">Cloudflare</a> als DNS-, CDN- und DDoS-Schutz-Dienst sowie
-      <a href="https://cloud.google.com">Google Cloud Platform</a> als Hosting-Provider (mit Servern, welche aktuell in der
-      <code>europe-west3</code> Zone in Frankfurt angesammelt sind). Weiters nutzen wir Dienste von
-      <a href="https://sentry.io">sentry.io</a> für Fehlermeldungen und Absturzmonitoring.
-      <br>Die Datenschutzerklärungen dieser Dienstanbieter können auf der jeweiligen Website der Firma gefunden werden.
+      <strong>3.2 Rechtsgrundlage</strong>
+      <br>Die Verarbeitung Ihrer Daten erfolgt auf Grundlage von:
+      <ul>
+        <li>Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)</li>
+        <li>Art. 6 Abs. 1 lit. a DSGVO (Ihre Einwilligung)</li>
+        <li>Art. 6 Abs. 1 lit. f DSGVO (berechtigte Interessen)</li>
+      </ul>
+      <strong>3.3 Zwecke der Datenverarbeitung</strong>
+      <br>Wir nutzen Ihre Daten für:
+      <ul>
+        <li>Bereitstellung und Verbesserung unseres Dienstes</li>
+        <li>Gewährleistung der Sicherheit unseres Dienstes</li>
+        <li>Kommunikation mit Ihnen</li>
+        <li>Erfüllung gesetzlicher Pflichten</li>
+      </ul>
+      <br>
+      <h4>4. Protokolldaten (Logdaten)</h4>
+      Wir speichern Informationen, die Ihr Browser bei der Nutzung unseres Dienstes übermittelt. Diese umfassen:
+      <ul>
+        <li>Ihre IP-Adresse</li>
+        <li>Browsertyp und -version</li>
+        <li>Besuchte Seiten unseres Dienstes</li>
+        <li>Datum und Uhrzeit des Zugriffs</li>
+        <li>Verweildauer auf den Seiten</li>
+        <li>Weitere Statistiken</li>
+      </ul>
+      <br>
+      <h4>5. Cookies und ähnliche Technologien</h4>
+      <strong>5.1 Was sind Cookies?</strong>
+      <br>Cookies sind kleine Textdateien, die auf Ihrem Endgerät gespeichert werden.
       <br>
       <br>
-      <h4>Verweise und Links</h4>
-      Unser Dienst kann Verweise auf andere Seiten, die nicht von uns betrieben werden, beinhalten. Beim Klicken auf einen Link einer dritten Partei werden Sie auf die jeweilige externe Website weitergeleitet. Wir haben keine Kontrolle über und übernehmen keine Verantwortung für die Inhalte, die Datenschutzbestimmungen und -verfahren von Dritten oder deren Dienstleistern und empfehlen Ihnen stark, die jeweiligen Richtlinen der Seiten Dritter, die Sie besuchen, zu überprüfen.
-      <br>Sollten Sie irgendwelche illegalen oder anderweitig anstößlichen Materialien auf irgendeiner Seite einer dritten Partei entdecken, auf welche von unserem Dienst verwiesen wird, so bitten wir Sie, uns auf einem der Wege zu kontaktieren, die auf unserer
+      <strong>5.2 Von uns verwendete Cookies</strong>
+      <ul>
+        <li>Notwendige Cookies: Für die Grundfunktionalität des Dienstes erforderlich</li>
+        <li>Zustimmungscookie: Speichert Ihre Cookie-Präferenzen</li>
+      </ul>
+      <strong>5.3 Drittanbieter-Cookies</strong>
+      <br>Unser Dienstanbieter Cloudflare kann Cookies setzen, um Anfragen besser verarbeiten zu können.
+      <br>
+      <br>
+      <strong>5.4 Cookie-Verwaltung</strong>
+      <br>Sie können Cookies in Ihren Browsereinstellungen ablehnen oder löschen. Beachten Sie, dass dies die Funktionalität unseres Dienstes einschränken kann.
+      <br>
+      <br>
+      <h4>6. Datenweitergabe an Drittanbieter</h4>
+      <strong>6.1 Allgemeines</strong>
+      <br>Wir geben Ihre Daten nur weiter, wenn:
+      <ul>
+        <li>Sie eingewilligt haben (Art. 6 Abs. 1 lit. a DSGVO)</li>
+        <li>Dies zur Vertragserfüllung erforderlich ist</li>
+        <li>Eine gesetzliche Verpflichtung besteht</li>
+      </ul>
+      <strong>6.2 Aktuelle Dienstanbieter</strong>
+      <br>Wir setzen folgende Dienstanbieter ein:
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Anbieter</th>
+            <th>Dienstleistung</th>
+            <th>Datenverarbeitung</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://cloudflare.com">Cloudflare</a></td>
+            <td>DNS, CDN, DDoS-Schutz</td>
+            <td>USA (Angemessenheitsbeschluss)</td>
+          </tr>
+          <tr>
+            <td><a href="https://cloud.google.com">Google Cloud Platform</a></td>
+            <td>Hosting (Frankfurt)</td>
+            <td>EU</td>
+          </tr>
+        </tbody>
+      </table>
+      Die Datenschutzerklärungen dieser Anbieter finden Sie auf deren Websites.
+      <br>
+      <br>
+      <h4>7. Ihre Rechte</h4>
+      Sie haben folgende Rechte bezüglich Ihrer personenbezogenen Daten:
+      <ul>
+        <li>Auskunftsrecht (Art. 15 DSGVO)</li>
+        <li>Berichtigungsrecht (Art. 16 DSGVO)</li>
+        <li>Löschungsrecht ("Recht auf Vergessenwerden", Art. 17 DSGVO)</li>
+        <li>Einschränkung der Verarbeitung (Art. 18 DSGVO)</li>
+        <li>Datenübertragbarkeit (Art. 20 DSGVO)</li>
+        <li>Widerspruchsrecht (Art. 21 DSGVO)</li>
+      </ul>
+      Um diese Rechte auszuüben, kontaktieren Sie uns bitte über die in Abschnitt 11 genannten Kanäle.
+      <br>
+      <br>
+      <h4>8. Externe Links</h4>
+      Unser Dienst kann Links zu externen Websites Dritter enthalten. Wir haben keine Kontrolle über deren Inhalte und Datenschutzpraktiken und übernehmen keine Verantwortung dafür.
+      <br>
+      <br>
+      <h4>9. Datenschutz bei Kindern</h4>
+      Unser Dienst richtet sich nicht an Personen unter 16 Jahren. Wir erheben nicht wissentlich personenbezogene Daten von Kindern. Falls wir versehentlich Daten von Kindern erhoben haben, löschen wir diese umgehend.
+      <br>
+      <br>
+      <h4>10. Änderungen dieser Datenschutzerklärung</h4>
+      Wir behalten uns vor, diese Datenschutzerklärung anzupassen. Über wesentliche Änderungen informieren wir Sie durch Veröffentlichung der aktualisierten Erklärung auf dieser Seite.
+      <br>
+      <br>
+      <h4>11. Kontakt</h4>
+      Bei Fragen zum Datenschutz kontaktieren Sie uns bitte über die auf unserer
       <router-link :to="{name: 'about'}">Über-</router-link> oder
-      <router-link :to="{name: 'imprint'}">Impressum-Seite</router-link> angegeben sind, und uns über den Link zu informieren.
-      <br>
-      <br>
-      <h4>Urheber- und Kennzeichenrecht</h4>
-      Wir sind bemüht, in allen unserer Publikationen die Urheberrechte der verwendeten Bilder, Grafiken, Tondokumente, Videosequenzen und Texte zu beachten, von uns selbst erstellte Bilder, Grafiken, Tondokumente, Videosequenzen und Texte zu nutzen oder auf lizenzfreie Bilder, Grafiken, Tondokumente, Videosequenzen und Texte zurückzugefreifen. Alle innerhalb der Website genannten und gegebenenfalls durch Dritte geschützten Marken- und Warenzeichen unterliegen uneingeschränkt den Bestimmungen des jeweils gültigen Kennzeichenrechts und den Besitzrechten der jeweiligen eingetragenen Eigentümer. Allein aufgrund der bloßen Nennung ist nicht der Schluss zu ziehen, dass Markenzeichen nicht durch Rechte Dritter geschützt sind! Das Copyright für veröffentlichte, von uns selbst erstellte Objekte bleibt allein bei uns. Eine Vervielfältigung oder Verwendung solcher Bilder, Grafiken, Tondokumente, Videosequenzen und Texte in anderen elektronischen oder gedruckten Publikationen ist ohne ausdrückliche Zustimmung des Autors nicht gestattet.
-      <br>Inhalte, welche durch Dritte auf unserer Website erstellt wurden - zum Beispiel Missionen, Communities oder ähnliches - unterliegen komplett der Verantwortung der jeweiligen Ersteller. Wir übernehmen keinerlei Haftung für Copyright-, Kennzeichen- oder Marken-Verstöße, welche durch Dritt-Inhalte auf unserer Website begangen wurden.
-      <br>Sollten Sie urheberrechtlich geschützte Inhalte in von Dritten erstellten Inhalten auf unserer Website finden, so kontaktieren Sie uns bitte auf einem der Wege, die auf userer
-      <router-link :to="{name: 'about'}">Über</router-link> oder
-      <router-link :to="{name: 'imprint'}">Impressum-Seite</router-link> angegeben sind und übermitteln uns Nachweise Ihres Eigentums der betroffenen Inhalte. Nach erfolgreicher Prüfung entfernen wir die jeweiligen Inhalte dann umgehend.
-      <br>
-      <br>
-      <h4>Schutz der Privatsphäre von Kindern</h4>
-      Unser Dienst richtet sich nicht an Personen unter dem Alter von 13 Jahren ("Kind", "Kindern").
-      <br>Wir sammeln nicht bewusst persönlich identifizierbare Informationen von Kindern unter 13 Jahren. Falls Sie ein Elternteil oder Vormund eines Kindes sind und Sie wissen, dass Ihr Kind uns persönliche Informationen übermittelt hat, so kontaktieren Sie uns bitte auf einem der Wege, die auf userer
-      <router-link :to="{name: 'about'}">Über</router-link> oder
-      <router-link :to="{name: 'imprint'}">Impressum-Seite</router-link> angegeben sind.
-      <br>Sollten wir bemerken, dass irgendwelche persönlichen Informationen von Kindern unter dem Alten von 13 Jahren an unser übermittelt wurden, werden wir diese Daten sofort von unserem Dienst entfernen.
-      <br>
-      <br>
-      <h4>Änderungen an dieser Datenschutzerklärung</h4>
-      Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Wir werde Sie über jegliche Änderungen auf GitHub informieren.
-      <br>Wir raten Ihnen, diese Erklärung regelmäßig auf Änderungen zu überprüfen, da diese sofort gültig sind, sobald sie auf dieser Seite veröffentlicht werden.
-      <br>
-      <br>
-      <h4>Kontaktieren Sie uns</h4>
-      Sollten Sie irgendwelche Fragen bezüglich dieser Datenschutzerklärung haben, so kontaktieren Sie uns bitte auf einem der Wege, die auf userer
-      <router-link :to="{name: 'about'}">Über-</router-link> oder
-      <router-link :to="{name: 'imprint'}">Impressum-Seite</router-link> angegeben sind.
+      <router-link :to="{name: 'imprint'}">Impressum-Seite</router-link> genannten Kanäle.
     </p>
   </b-jumbotron>
 </template>
+
+<script>
+export default {
+  name: 'PrivacyDE'
+};
+</script>
