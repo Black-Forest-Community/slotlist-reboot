@@ -12,28 +12,7 @@ from pydantic import BaseModel
 
 
 class JWTAuth(HttpBearer):
-    """JWT Authentication for Django Ninja that supports both JWT and Bearer prefixes"""
-    
-    openapi_scheme: str = "bearer"
-    
-    def __call__(self, request: HttpRequest) -> Optional[dict]:
-        """
-        Override __call__ to handle JWT prefix in addition to Bearer.
-        This is called before authenticate() to extract the token from headers.
-        """
-        auth_header = request.headers.get('Authorization', '')
-        
-        # Handle JWT prefix (legacy format)
-        if auth_header.startswith('JWT '):
-            token = auth_header[4:].strip()
-            return self.authenticate(request, token)
-        
-        # Handle Bearer prefix (standard format)
-        elif auth_header.startswith('Bearer '):
-            token = auth_header[7:].strip()
-            return self.authenticate(request, token)
-        
-        return None
+    """JWT Authentication for Django Ninja using standard Bearer token"""
     
     def authenticate(self, request: HttpRequest, token: str) -> Optional[dict]:
         """

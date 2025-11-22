@@ -490,7 +490,7 @@ const mutations = {
 
     Vue.acl.parsePermissions(payload.decodedToken.permissions)
 
-    axios.defaults.headers.common['Authorization'] = `JWT ${payload.token}`
+    axios.defaults.headers.common['Authorization'] = `Bearer ${payload.token}`
 
     state.token = payload.token
     state.decodedToken = payload.decodedToken
