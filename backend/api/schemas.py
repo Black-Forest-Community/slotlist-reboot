@@ -305,3 +305,15 @@ class CommunityPermissionCreateSchema(Schema):
 class MissionBannerImageSchema(Schema):
     imageType: str
     image: str  # Base64 encoded image data
+
+
+class MissionSlotAssignSchema(Schema):
+    userUid: UUID
+    force: Optional[bool] = False
+    suppressNotifications: Optional[bool] = False
+
+
+class MissionPermissionCreateSchema(Schema):
+    userUid: UUID
+    permission: str  # 'editor' or 'slotlist.community'
+    suppressNotifications: Optional[bool] = False

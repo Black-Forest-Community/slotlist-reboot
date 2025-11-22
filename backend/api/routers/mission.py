@@ -11,7 +11,8 @@ from api.schemas import (
     MissionCreateSchema, MissionUpdateSchema, 
     MissionSlotGroupCreateSchema, MissionSlotGroupUpdateSchema,
     MissionSlotCreateSchema, MissionSlotUpdateSchema,
-    MissionBannerImageSchema
+    MissionBannerImageSchema, MissionSlotAssignSchema,
+    MissionPermissionCreateSchema
 )
 from api.auth import has_permission, generate_jwt
 
@@ -659,6 +660,67 @@ def delete_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
     return {'success': True}
 
 
+@router.post('/{slug}/slots/{slot_uid}/assign', response={200: dict, 400: dict, 403: dict})
+def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSchema):
+    """Assign a user to a mission slot"""
+    current_user_uid = request.auth.get('user', {}).get('uid')
+    current_user = get_object_or_404(User, uid=current_user_uid)
+    permissions = request.auth.get('permissions', [])
+    
+    mission = get_object_or_404(Mission, slug=slug)
+    slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
+    
+    # Get target user from payload
+    target_user_uid = payload.userUid
+    force = payload.force
+    suppress_notifications = payload.suppressNotifications
+    
+    target_user = get_object_or_404(User, uid=target_user_uid)
+    
+    # Check if slot is already assigned
+    if slot.assignee and not force:
+        return 400, {'detail': 'Slot is already assigned. Use force=true to override.'}
+    
+    # Check if slot is blocked
+    if slot.blocked:
+        return 400, {'detail': 'Slot is blocked and cannot be assigned'}
+    
+    # Check permissions - mission creator or admin can assign anyone
+    is_creator = str(mission.creator.uid) == str(current_user_uid)
+    is_admin = has_permission(permissions, 'admin.mission')
+    
+    # Check if user is assigning themselves
+    is_self_assignment = str(target_user_uid) == str(current_user_uid)
+    
+    # Community slot restrictions
+    if slot.restricted_community:
+        if not target_user.community or str(target_user.community.uid) != str(slot.restricted_community.uid):
+            if not is_creator and not is_admin:
+                return 403, {'detail': 'This slot is restricted to a specific community'}
+    
+    # Only mission creator or admin can assign other users
+    if not is_self_assignment and not is_creator and not is_admin:
+        return 403, {'detail': 'Insufficient permissions to assign other users to slots'}
+    
+    # Assign the slot
+    slot.assignee = target_user
+    slot.save()
+    
+    # TODO: Create notification if not suppressed
+    # TODO: Remove any existing registrations for this slot
+    
+    return {
+        'slot': {
+            'uid': str(slot.uid),
+            'title': slot.title,
+            'assignee': {
+                'uid': str(target_user.uid),
+                'nickname': target_user.nickname,
+            }
+        }
+    }
+
+
 @router.post('/{slug}/slots/{slot_uid}/unassign', response={200: dict, 400: dict, 403: dict})
 def unassign_slot(request, slug: str, slot_uid: UUID):
     """Unassign a user from a mission slot"""
@@ -1116,6 +1178,139 @@ def delete_mission_banner_image(request, slug: str):
     # Clear the URL from database
     mission.banner_image_url = None
     mission.save()
+    
+    return {'success': True}
+
+
+@router.get('/{slug}/permissions', response={200: dict, 403: dict})
+def get_mission_permissions(request, slug: str, limit: int = 10, offset: int = 0):
+    """Get all permissions for a mission"""
+    from api.models import Permission
+    
+    mission = get_object_or_404(Mission, slug=slug)
+    
+    # Check permissions - mission creator or admin can view
+    user_uid = request.auth.get('user', {}).get('uid')
+    permissions = request.auth.get('permissions', [])
+    
+    is_creator = str(mission.creator.uid) == str(user_uid)
+    is_admin = has_permission(permissions, 'admin.mission')
+    
+    if not is_creator and not is_admin:
+        return 403, {'detail': 'Insufficient permissions to view mission permissions'}
+    
+    # Get all permissions for this mission
+    mission_permissions = Permission.objects.filter(
+        permission__startswith=f'mission.{slug}.'
+    ).select_related('user')[offset:offset + limit]
+    
+    total = Permission.objects.filter(permission__startswith=f'mission.{slug}.').count()
+    
+    return {
+        'permissions': [
+            {
+                'uid': perm.uid,
+                'permission': perm.permission,
+                'user': {
+                    'uid': perm.user.uid,
+                    'nickname': perm.user.nickname,
+                }
+            }
+            for perm in mission_permissions
+        ],
+        'total': total
+    }
+
+
+@router.post('/{slug}/permissions', response={200: dict, 403: dict, 400: dict})
+def create_mission_permission(request, slug: str, payload: MissionPermissionCreateSchema):
+    """Create a permission for a mission"""
+    from api.models import Permission, User
+    
+    mission = get_object_or_404(Mission, slug=slug)
+    
+    # Check permissions - only mission creator or admin
+    user_uid = request.auth.get('user', {}).get('uid')
+    permissions = request.auth.get('permissions', [])
+    
+    is_creator = str(mission.creator.uid) == str(user_uid)
+    is_admin = has_permission(permissions, 'admin.mission')
+    
+    if not is_creator and not is_admin:
+        return 403, {'detail': 'Insufficient permissions to create mission permissions'}
+    
+    # Get required fields
+    target_user_uid = payload.userUid
+    permission_str = payload.permission
+    
+    # Frontend sends full permission string like "mission.{slug}.editor"
+    # Backend expects just the type, but we accept both formats
+    if not permission_str.startswith('mission.'):
+        # If it's just the type, construct full string
+        permission_type = permission_str
+        valid_types = ['editor', 'slotlist.community']
+        if permission_type not in valid_types:
+            return 400, {'detail': f'Invalid permission type. Valid: {", ".join(valid_types)}'}
+        permission_str = f'mission.{slug}.{permission_type}'
+    else:
+        # Verify it's for the correct mission
+        if not permission_str.startswith(f'mission.{slug}.'):
+            return 400, {'detail': 'Permission does not match this mission'}
+    
+    target_user = get_object_or_404(User, uid=target_user_uid)
+    
+    # Check if permission already exists
+    existing = Permission.objects.filter(
+        user=target_user,
+        permission=permission_str
+    ).first()
+    
+    if existing:
+        return 400, {'detail': 'Permission already exists'}
+    
+    # Create permission
+    permission = Permission.objects.create(
+        user=target_user,
+        permission=permission_str
+    )
+    
+    return {
+        'permission': {
+            'uid': permission.uid,
+            'permission': permission.permission,
+            'user': {
+                'uid': target_user.uid,
+                'nickname': target_user.nickname,
+            }
+        }
+    }
+
+
+@router.delete('/{slug}/permissions/{permission_uid}', response={200: dict, 403: dict})
+def delete_mission_permission(request, slug: str, permission_uid: UUID):
+    """Delete a permission for a mission"""
+    from api.models import Permission
+    
+    mission = get_object_or_404(Mission, slug=slug)
+    
+    # Check permissions - only mission creator or admin
+    user_uid = request.auth.get('user', {}).get('uid')
+    permissions = request.auth.get('permissions', [])
+    
+    is_creator = str(mission.creator.uid) == str(user_uid)
+    is_admin = has_permission(permissions, 'admin.mission')
+    
+    if not is_creator and not is_admin:
+        return 403, {'detail': 'Insufficient permissions to delete mission permissions'}
+    
+    # Get the permission
+    permission = get_object_or_404(Permission, uid=permission_uid)
+    
+    # Verify it belongs to this mission
+    if not permission.permission.startswith(f'mission.{slug}.'):
+        return 403, {'detail': 'Permission does not belong to this mission'}
+    
+    permission.delete()
     
     return {'success': True}
 
