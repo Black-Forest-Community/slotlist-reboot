@@ -34,6 +34,14 @@ class SteamLoginSchema(BaseModel):
     url: str
 
 
+class DeleteAccountSchema(BaseModel):
+    nickname: str
+
+
+class UpdateAccountSchema(BaseModel):
+    nickname: Optional[str] = None
+
+
 @router.get('/steam', auth=None)
 def get_steam_login_url(request):
     """
@@ -307,7 +315,7 @@ def get_account_details(request):
 
 
 @router.patch('/account', auth=JWTAuth())
-def update_account(request, payload: dict):
+def update_account(request, payload: UpdateAccountSchema):
     """
     Update authenticated user's account details
     
@@ -335,9 +343,9 @@ def update_account(request, payload: dict):
         return 403, {'detail': 'User account is deactivated'}
     
     # Update nickname if provided
-    if 'nickname' in payload:
-        user.nickname = payload['nickname']
-        user.save()
+    if payload.nickname is not None:
+        User.objects.filter(uid=user_data['uid']).update(nickname=payload.nickname)
+        user.refresh_from_db()
     
     return {
         'user': {
@@ -356,7 +364,7 @@ def update_account(request, payload: dict):
 
 
 @router.post('/account/delete', auth=JWTAuth())
-def delete_account(request, payload: dict):
+def delete_account(request, payload: DeleteAccountSchema):
     """
     Delete authenticated user's account
     
@@ -381,7 +389,7 @@ def delete_account(request, payload: dict):
     user = get_object_or_404(User, uid=user_data['uid'])
     
     # Verify nickname for confirmation
-    if 'nickname' not in payload or payload['nickname'] != user.nickname:
+    if payload.nickname != user.nickname:
         return 400, {'detail': 'Nickname confirmation does not match'}
     
     # Delete the user
