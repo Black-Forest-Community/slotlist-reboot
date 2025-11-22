@@ -300,3 +300,8 @@ class CommunityApplicationStatusSchema(Schema):
 class CommunityPermissionCreateSchema(Schema):
     userUid: UUID
     permission: str
+
+
+class MissionBannerImageSchema(Schema):
+    imageType: str
+    image: str  # Base64 encoded image data

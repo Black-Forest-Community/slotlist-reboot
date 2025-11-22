@@ -10,7 +10,8 @@ from api.models import Mission, Community, User, MissionSlotGroup, MissionSlot, 
 from api.schemas import (
     MissionCreateSchema, MissionUpdateSchema, 
     MissionSlotGroupCreateSchema, MissionSlotGroupUpdateSchema,
-    MissionSlotCreateSchema, MissionSlotUpdateSchema
+    MissionSlotCreateSchema, MissionSlotUpdateSchema,
+    MissionBannerImageSchema
 )
 from api.auth import has_permission, generate_jwt
 
@@ -1017,6 +1018,104 @@ def delete_mission_slot(request, slug: str, slot_uid: UUID):
         slot_group=slot_group,
         order_number__gt=deleted_order
     ).update(order_number=models.F('order_number') - 1)
+    
+    return {'success': True}
+
+
+@router.put('/{slug}/bannerImage', response={200: dict, 403: dict, 400: dict})
+def upload_mission_banner_image(request, slug: str, payload: MissionBannerImageSchema):
+    """Upload a banner image for a mission"""
+    import base64
+    import hashlib
+    import os
+    from django.conf import settings
+    
+    mission = get_object_or_404(Mission, slug=slug)
+    
+    # Check permissions
+    user_uid = request.auth.get('user', {}).get('uid')
+    permissions = request.auth.get('permissions', [])
+    
+    is_creator = str(mission.creator.uid) == user_uid
+    is_admin = has_permission(permissions, 'admin.mission')
+    
+    if not is_creator and not is_admin:
+        return 403, {'detail': 'Insufficient permissions to upload banner for this mission'}
+    
+    try:
+        # Decode base64 image
+        image_data = base64.b64decode(payload.image)
+        
+        # Validate image type
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+        if payload.imageType not in allowed_types:
+            return 400, {'detail': f'Invalid image type. Allowed: {", ".join(allowed_types)}'}
+        
+        # Generate filename based on mission slug and hash
+        file_hash = hashlib.md5(image_data).hexdigest()[:8]
+        extension = payload.imageType.split('/')[-1]
+        if extension == 'jpeg':
+            extension = 'jpg'
+        filename = f"{slug}-{file_hash}.{extension}"
+        
+        # Create upload directory if it doesn't exist
+        upload_dir = os.path.join(settings.MEDIA_ROOT, 'mission-banners')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Save file
+        filepath = os.path.join(upload_dir, filename)
+        with open(filepath, 'wb') as f:
+            f.write(image_data)
+        
+        # Update mission with new image URL
+        # Construct URL based on MEDIA_URL setting
+        image_url = f"{settings.MEDIA_URL}mission-banners/{filename}"
+        mission.banner_image_url = image_url
+        mission.save()
+        
+        return {
+            'success': True,
+            'imageUrl': image_url
+        }
+        
+    except Exception as e:
+        return 400, {'detail': f'Failed to upload image: {str(e)}'}
+
+
+@router.delete('/{slug}/bannerImage', response={200: dict, 403: dict})
+def delete_mission_banner_image(request, slug: str):
+    """Delete the banner image for a mission"""
+    import os
+    from django.conf import settings
+    
+    mission = get_object_or_404(Mission, slug=slug)
+    
+    # Check permissions
+    user_uid = request.auth.get('user', {}).get('uid')
+    permissions = request.auth.get('permissions', [])
+    
+    is_creator = str(mission.creator.uid) == user_uid
+    is_admin = has_permission(permissions, 'admin.mission')
+    
+    if not is_creator and not is_admin:
+        return 403, {'detail': 'Insufficient permissions to delete banner for this mission'}
+    
+    # Delete file if it exists
+    if mission.banner_image_url:
+        # Extract filename from URL
+        filename = mission.banner_image_url.split('/')[-1]
+        filepath = os.path.join(settings.MEDIA_ROOT, 'mission-banners', filename)
+        
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except Exception as e:
+                # Log but don't fail if file deletion fails
+                print(f"Warning: Failed to delete file {filepath}: {e}")
+    
+    # Clear the URL from database
+    mission.banner_image_url = None
+    mission.save()
     
     return {'success': True}
 
