@@ -48,7 +48,7 @@ The easiest way to start developing is by setting up the required Node/Yarn envi
 In order to allows for easier development and debugging, the Vue devtools extension for [Google Chrome](https://chrome.google.com/webstore/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) or [Mozilla Firefox](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/) is highly recommended since it provides additional insight, especially into the vuex store and allows for on-the-fly modifications.
 
 ## Deployment
-slotlist-frontend was designed to be deployed to a Kubernetes cluster running on the [Google Cloud Platform](https://cloud.google.com/). The `k8s/` folder contains the configuration files required to create and run all services. This project also depends on the rest of the infrastructure being set up via the Kubernetes configs provided in the [slotlist-backend](https://github.com/MorpheusXAUT/slotlist-backend) project. A `cloudbuild.yaml` file for automatic Docker image builds is provided in the repository root as well.
+slotlist-frontend was designed to be deployed to a Kubernetes cluster running on the [Google Cloud Platform](https://cloud.google.com/). The `k8s/` folder contains the configuration files required to create and run all services. This project also depends on the rest of the infrastructure being set up via the Kubernetes configs provided in the [slotlist-backend](hhttps://github.com/Black-Forest-Community/slotlist-reboot) project. A `cloudbuild.yaml` file for automatic Docker image builds is provided in the repository root as well.
 
 Generally speaking, slotlist-frontend can be deployed anywhere running a webserver capable of serving static content.
 
@@ -71,4 +71,4 @@ slotlist-frontend uses [Semantic Versioning](https://semver.org/) for releases, 
 [MIT](https://choosealicense.com/licenses/mit/)
 
 ## See Also
-[slotlist-backend](https://github.com/MorpheusXAUT/slotlist-backend), the backend portion of [slotlist.online](https://slotlist.online), written in TypeScript
+[slotlist-backend](hhttps://github.com/Black-Forest-Community/slotlist-reboot), the backend portion of [slotlist.online](https://slotlist.online), written in TypeScript

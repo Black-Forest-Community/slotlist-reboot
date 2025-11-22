@@ -46,7 +46,7 @@
         <router-link :to="{name: 'home'}">slotlist.online</router-link> provides no guarantee about the uptime and availability of its API and might cease services at any point. We are not responsible for any outages or errors caused to your applications due to our system.
         <br>
         <br>Should you run into any issues with the API, please open an issues on our
-        <a href="https://github.com/MorpheusXAUT/slotlist-backend/issues">backend repository issue tracker</a> on GitHub or use any of the other contact methods mentioned on the
+        <a href="hhttps://github.com/Black-Forest-Community/slotlist-reboot/issues">backend repository issue tracker</a> on GitHub or use any of the other contact methods mentioned on the
         <router-link :to="{name: 'about'}">About</router-link> page to contact us.
       </p>
     </b-jumbotron>
