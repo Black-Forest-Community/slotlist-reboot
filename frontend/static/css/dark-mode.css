@@ -67,6 +67,10 @@
   color: var(--color-text);
 }
 
+:root[data-theme="dark"] .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
 :root[data-theme="dark"] .card {
   background: var(--color-bg-secondary);
   border-color: var(--color-border);
@@ -216,6 +220,42 @@
 
 :root[data-theme="dark"] .calendar-weeks-header {
   border-color: var(--color-border);
+}
+
+/* Agenda dark mode */
+:root[data-theme="dark"] .agenda-date-header {
+  background-color: var(--color-bg-tertiary);
+  border-left-color: var(--color-success);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .agenda-mission-item {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .agenda-mission-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="dark"] .agenda-mission-link {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .agenda-mission-time {
+  color: var(--color-success);
+}
+
+:root[data-theme="dark"] .agenda-mission-title {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .agenda-mission-community {
+  color: var(--color-text-secondary);
+}
+
+:root[data-theme="dark"] .community-tag {
+  color: var(--color-success);
 }
 
 /* Jumbotron dark mode */
