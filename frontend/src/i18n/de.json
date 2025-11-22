@@ -733,5 +733,9 @@
   "user.status": "Status",
   "user.status.deactivated": "Account deaktiviert",
   "user.status.normal": "normal",
-  "user.steamId": "Steam ID"
+  "user.steamId": "Steam ID",
+  "permission.admin.community": "Admin: Communities",
+  "permission.admin.mission": "Admin: Missionen",
+  "permission.admin.slotlist": "Admin: Slotlist",
+  "permission.admin.user": "Admin: Benutzer"
 }

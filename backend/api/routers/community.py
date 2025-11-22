@@ -2,7 +2,7 @@ from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
 from api.models import Community
-from api.schemas import CommunityCreateSchema, CommunityUpdateSchema
+from api.schemas import CommunityCreateSchema, CommunityUpdateSchema, CommunityApplicationStatusSchema, CommunityPermissionCreateSchema
 from api.auth import has_permission
 
 router = Router()
@@ -341,6 +341,49 @@ def get_community_application_status(request, slug: str):
         return 404, {'message': 'Community application not found'}
 
 
+@router.get('/{slug}/applications', response={200: dict, 403: dict})
+def get_community_applications(request, slug: str, limit: int = 10, offset: int = 0, includeProcessed: bool = False):
+    """Get all applications for a community (requires leader/recruitment permission)"""
+    from api.models import CommunityApplication
+    
+    # Check permissions
+    permissions = request.auth.get('permissions', [])
+    if not has_permission(permissions, f'community.{slug}.leader') and \
+       not has_permission(permissions, f'community.{slug}.recruitment') and \
+       not has_permission(permissions, f'community.{slug}.founder'):
+        return 403, {'detail': 'Forbidden'}
+    
+    community = get_object_or_404(Community, slug=slug)
+    
+    # Build query
+    applications_query = CommunityApplication.objects.filter(community=community)
+    
+    # Filter by status
+    if not includeProcessed:
+        applications_query = applications_query.filter(status='submitted')
+    
+    total = applications_query.count()
+    applications = applications_query.select_related('user').order_by('-created_at')[offset:offset + limit]
+    
+    return {
+        'applications': [
+            {
+                'uid': app.uid,
+                'status': app.status,
+                'createdAt': app.created_at.isoformat() if app.created_at else None,
+                'updatedAt': app.updated_at.isoformat() if app.updated_at else None,
+                'user': {
+                    'uid': app.user.uid,
+                    'nickname': app.user.nickname,
+                    'steamId': app.user.steam_id,
+                }
+            }
+            for app in applications
+        ],
+        'total': total
+    }
+
+
 @router.post('/{slug}/applications')
 def create_community_application(request, slug: str):
     """Submit an application to join a community"""
@@ -379,3 +422,148 @@ def create_community_application(request, slug: str):
         'status': application.status,
         'uid': str(application.uid)
     }
+
+
+@router.patch('/{slug}/applications/{application_uid}', response={200: dict, 403: dict, 400: dict})
+def process_community_application(request, slug: str, application_uid: str, payload: CommunityApplicationStatusSchema):
+    """Process (accept/deny) a community application"""
+    from api.models import CommunityApplication, User
+    
+    # Check permissions
+    permissions = request.auth.get('permissions', [])
+    if not has_permission(permissions, f'community.{slug}.leader') and \
+       not has_permission(permissions, f'community.{slug}.recruitment') and \
+       not has_permission(permissions, f'community.{slug}.founder'):
+        return 403, {'detail': 'Forbidden'}
+    
+    community = get_object_or_404(Community, slug=slug)
+    
+    # Get the application
+    application = get_object_or_404(CommunityApplication, uid=application_uid, community=community)
+    
+    # Get status from payload
+    new_status = payload.status
+    if new_status not in ['accepted', 'denied']:
+        return 400, {'detail': 'status must be "accepted" or "denied"'}
+    
+    # Update application status
+    application.status = new_status
+    application.save()
+    
+    # If accepted, add user to community
+    if new_status == 'accepted':
+        user = application.user
+        user.community = community
+        user.save()
+    
+    return {
+        'application': {
+            'uid': application.uid,
+            'status': application.status,
+            'createdAt': application.created_at.isoformat() if application.created_at else None,
+            'updatedAt': application.updated_at.isoformat() if application.updated_at else None,
+            'user': {
+                'uid': application.user.uid,
+                'nickname': application.user.nickname,
+                'steamId': application.user.steam_id,
+            }
+        }
+    }
+
+
+@router.delete('/{slug}/members/{member_uid}', response={200: dict, 403: dict})
+def remove_community_member(request, slug: str, member_uid: str):
+    """Remove a member from a community"""
+    from api.models import User
+    
+    # Check permissions
+    permissions = request.auth.get('permissions', [])
+    if not has_permission(permissions, f'community.{slug}.leader') and \
+       not has_permission(permissions, f'community.{slug}.recruitment') and \
+       not has_permission(permissions, f'community.{slug}.founder'):
+        return 403, {'detail': 'Forbidden'}
+    
+    community = get_object_or_404(Community, slug=slug)
+    
+    # Get the user
+    user = get_object_or_404(User, uid=member_uid)
+    
+    # Check if user is actually in this community
+    if user.community != community:
+        return 400, {'detail': 'User is not a member of this community'}
+    
+    # Remove user from community
+    user.community = None
+    user.save()
+    
+    return {'success': True}
+
+
+@router.post('/{slug}/permissions', response={200: dict, 403: dict, 400: dict})
+def create_community_permission(request, slug: str, payload: CommunityPermissionCreateSchema):
+    """Create a permission for a community member"""
+    from api.models import Permission, User
+    
+    # Check permissions
+    permissions = request.auth.get('permissions', [])
+    if not has_permission(permissions, f'community.{slug}.leader') and not has_permission(permissions, 'admin.community'):
+        return 403, {'detail': 'Forbidden'}
+    
+    community = get_object_or_404(Community, slug=slug)
+    
+    # Get required fields from payload
+    user_uid = payload.userUid
+    permission_str = payload.permission
+    
+    # Get the user
+    user = get_object_or_404(User, uid=user_uid)
+    
+    # Check if permission already exists
+    existing_permission = Permission.objects.filter(
+        user=user,
+        permission=permission_str
+    ).first()
+    
+    if existing_permission:
+        return 400, {'detail': 'Permission already exists'}
+    
+    # Create the permission
+    permission = Permission.objects.create(
+        user=user,
+        permission=permission_str
+    )
+    
+    return {
+        'permission': {
+            'uid': permission.uid,
+            'permission': permission.permission,
+            'user': {
+                'uid': user.uid,
+                'nickname': user.nickname,
+            }
+        }
+    }
+
+
+@router.delete('/{slug}/permissions/{permission_uid}', response={200: dict, 403: dict})
+def delete_community_permission(request, slug: str, permission_uid: str):
+    """Delete a permission for a community member"""
+    from api.models import Permission
+    
+    # Check permissions
+    permissions = request.auth.get('permissions', [])
+    if not has_permission(permissions, f'community.{slug}.leader') and not has_permission(permissions, 'admin.community'):
+        return 403, {'detail': 'Forbidden'}
+    
+    community = get_object_or_404(Community, slug=slug)
+    
+    # Get the permission
+    permission = get_object_or_404(Permission, uid=permission_uid)
+    
+    # Verify the permission belongs to this community
+    if not permission.permission.startswith(f'community.{slug}.'):
+        return 403, {'detail': 'Permission does not belong to this community'}
+    
+    permission.delete()
+    
+    return {'success': True}

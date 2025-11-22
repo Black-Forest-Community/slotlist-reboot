@@ -291,3 +291,12 @@ class MissionSlotUpdateSchema(Schema):
     blocked: Optional[bool] = None
     reserve: Optional[bool] = None
     autoAssignable: Optional[bool] = None
+
+
+class CommunityApplicationStatusSchema(Schema):
+    status: str  # 'accepted' or 'denied'
+
+
+class CommunityPermissionCreateSchema(Schema):
+    userUid: UUID
+    permission: str

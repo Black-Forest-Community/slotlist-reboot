@@ -173,7 +173,7 @@
           <b-btn variant="primary" v-b-modal.communityLogoModal>
             <i class="fa fa-picture-o" aria-hidden="true"></i> {{ $t('button.edit.community.logo') }}
           </b-btn>&nbsp;
-          <b-btn variant="primary" v-if="isCommunityFounder" v-b-modal.communityPermissionModal>
+          <b-btn variant="primary" v-if="canManagePermissions" v-b-modal.communityPermissionModal>
             <i class="fa fa-key" aria-hidden="true"></i> {{ $t('button.edit.community.permissions') }}
           </b-btn>&nbsp;
           <click-confirm v-if="isCommunityFounder" yes-icon="fa fa-trash" yes-class="btn btn-danger" :messages="{title: $t('community.confirm.delete'), yes: $t('button.confirm'), no: $t('button.cancel')}">
@@ -224,7 +224,7 @@
     <div v-if="loggedIn">
       <community-edit-modal v-if="canEditCommunity"></community-edit-modal>
       <community-logo-modal v-if="canEditCommunity"></community-logo-modal>
-      <community-permission-modal v-if="isCommunityFounder"></community-permission-modal>
+      <community-permission-modal v-if="canManagePermissions"></community-permission-modal>
     </div>
     <!-- End of modals -->
   </div>
@@ -352,6 +352,9 @@ export default {
     },
     isCommunityFounder() {
       return this.$acl.can([`community.${this.$route.params.communitySlug}.founder`])
+    },
+    canManagePermissions() {
+      return this.$acl.can([`community.${this.$route.params.communitySlug}.founder`, `community.${this.$route.params.communitySlug}.leader`])
     },
     isCommunityMember() {
       const user = this.$store.getters.user
