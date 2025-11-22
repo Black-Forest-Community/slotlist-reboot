@@ -404,7 +404,7 @@ def get_account_details(request):
     Get authenticated user's account details
     
     Returns detailed information about the currently authenticated user including
-    their community association and account status.
+    their community association, account status, missions, and permissions.
     
     **Authentication:** Required (JWT)
     
@@ -424,7 +424,9 @@ def get_account_details(request):
                 "tag": "[TAG]",
                 "slug": "community-slug"
             },
-            "active": true
+            "active": true,
+            "missions": [...],
+            "permissions": [...]
         }
     }
     ```
@@ -433,6 +435,8 @@ def get_account_details(request):
     - `401`: Invalid or expired token
     - `403`: User account is deactivated
     """
+    from api.models import Mission, Permission
+    
     user_data = request.auth.get('user')
     if not user_data:
         return 401, {'detail': 'Invalid token'}
@@ -441,6 +445,12 @@ def get_account_details(request):
     
     if not user.active:
         return 403, {'detail': 'User account is deactivated'}
+    
+    # Get user's missions
+    missions = Mission.objects.filter(creator=user).select_related('community').order_by('-created_at')[:10]
+    
+    # Get user's permissions
+    user_permissions = Permission.objects.filter(user=user)
     
     return {
         'user': {
@@ -453,7 +463,32 @@ def get_account_details(request):
                 'tag': user.community.tag,
                 'slug': user.community.slug,
             } if user.community else None,
-            'active': user.active
+            'active': user.active,
+            'missions': [
+                {
+                    'uid': str(mission.uid),
+                    'slug': mission.slug,
+                    'title': mission.title,
+                    'briefingTime': mission.briefing_time.isoformat() if mission.briefing_time else None,
+                    'slottingTime': mission.slotting_time.isoformat() if mission.slotting_time else None,
+                    'startTime': mission.start_time.isoformat() if mission.start_time else None,
+                    'endTime': mission.end_time.isoformat() if mission.end_time else None,
+                    'community': {
+                        'uid': str(mission.community.uid),
+                        'name': mission.community.name,
+                        'tag': mission.community.tag,
+                        'slug': mission.community.slug
+                    } if mission.community else None
+                }
+                for mission in missions
+            ],
+            'permissions': [
+                {
+                    'uid': str(perm.uid),
+                    'permission': perm.permission
+                }
+                for perm in user_permissions
+            ]
         }
     }
 

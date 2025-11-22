@@ -22,29 +22,29 @@ class UserAPICompatibilityTests(TestCase):
         
         # Create test users
         self.test_user1 = User.objects.create(
-            uid='test-user-uid-1',
-            steamId='76561198012345678',
+            uid='a0000000-0000-0000-0000-000000000001',
+            steam_id='76561198012345678',
             nickname='TestUser1',
             active=True
         )
         
         self.test_user2 = User.objects.create(
-            uid='test-user-uid-2',
-            steamId='76561198087654321',
+            uid='a0000000-0000-0000-0000-000000000002',
+            steam_id='76561198087654321',
             nickname='TestUser2',
             active=True
         )
         
         self.admin_user = User.objects.create(
-            uid='admin-user-uid',
-            steamId='76561198011111111',
+            uid='a0000000-0000-0000-0000-000000000003',
+            steam_id='76561198011111111',
             nickname='AdminUser',
             active=True
         )
         
         # Create admin permission
         Permission.objects.create(
-            uid='admin-permission-uid',
+            uid='b0000000-0000-0000-0000-000000000001',
             permission='admin.user',
             user=self.admin_user
         )
@@ -59,7 +59,7 @@ class UserAPICompatibilityTests(TestCase):
             {
                 'uid': user.uid,
                 'nickname': user.nickname,
-                'steamId': user.steamId,
+                'steamId': user.steam_id,
                 'permissions': permissions,
                 'iat': int(time.time()),
                 'exp': int(time.time()) + settings.JWT_EXPIRES_IN
@@ -70,7 +70,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_list_no_auth(self):
         """Test GET /api/v1/users - Returns paginated user list without auth"""
-        response = self.client.get('/api/v1/users')
+        response = self.client.get('/api/v1/users/')
         
         # Should return 200 OK
         self.assertEqual(response.status_code, 200)
@@ -89,7 +89,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_list_with_pagination(self):
         """Test GET /api/v1/users with pagination parameters"""
-        response = self.client.get('/api/v1/users?limit=1&offset=0')
+        response = self.client.get('/api/v1/users/?limit=1&offset=0')
         
         # Should return 200 OK
         self.assertEqual(response.status_code, 200)
@@ -102,7 +102,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_list_with_search(self):
         """Test GET /api/v1/users with search parameter"""
-        response = self.client.get('/api/v1/users?search=TestUser1')
+        response = self.client.get('/api/v1/users/?search=TestUser1')
         
         # Should return 200 OK
         self.assertEqual(response.status_code, 200)
@@ -118,7 +118,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_details(self):
         """Test GET /api/v1/users/{userUid} - Returns user details"""
-        response = self.client.get(f'/api/v1/users/{self.test_user1.uid}')
+        response = self.client.get(f'/api/v1/users/{self.test_user1.uid}/')
         
         # Should return 200 OK
         self.assertEqual(response.status_code, 200)
@@ -131,7 +131,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_details_not_found(self):
         """Test GET /api/v1/users/{userUid} with invalid UID - Should return 404"""
-        response = self.client.get('/api/v1/users/invalid-uid-12345')
+        response = self.client.get('/api/v1/users/invalid-uid-12345/')
         
         # Should return 404 Not Found
         self.assertEqual(response.status_code, 404)
@@ -139,7 +139,7 @@ class UserAPICompatibilityTests(TestCase):
     def test_patch_user_details_as_admin(self):
         """Test PATCH /api/v1/users/{userUid} - Admin can modify user details"""
         response = self.client.patch(
-            f'/api/v1/users/{self.test_user1.uid}',
+            f'/api/v1/users/{self.test_user1.uid}/',
             data=json.dumps({'nickname': 'ModifiedNickname'}),
             content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
@@ -160,7 +160,7 @@ class UserAPICompatibilityTests(TestCase):
     def test_patch_user_details_as_non_admin(self):
         """Test PATCH /api/v1/users/{userUid} without admin permission - Should return 403"""
         response = self.client.patch(
-            f'/api/v1/users/{self.test_user2.uid}',
+            f'/api/v1/users/{self.test_user2.uid}/',
             data=json.dumps({'nickname': 'ModifiedNickname'}),
             content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.test_token}'
@@ -172,7 +172,7 @@ class UserAPICompatibilityTests(TestCase):
     def test_patch_user_deactivate_as_admin(self):
         """Test PATCH /api/v1/users/{userUid} - Admin can deactivate user"""
         response = self.client.patch(
-            f'/api/v1/users/{self.test_user1.uid}',
+            f'/api/v1/users/{self.test_user1.uid}/',
             data=json.dumps({'active': False}),
             content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
@@ -193,14 +193,14 @@ class UserAPICompatibilityTests(TestCase):
         """Test DELETE /api/v1/users/{userUid} - Admin can delete user"""
         # Create a user to delete
         delete_user = User.objects.create(
-            uid='delete-user-uid-2',
-            steamId='76561198099999999',
+            uid='a0000000-0000-0000-0000-000000000099',
+            steam_id='76561198099999999',
             nickname='DeleteUser2',
             active=True
         )
         
         response = self.client.delete(
-            f'/api/v1/users/{delete_user.uid}',
+            f'/api/v1/users/{delete_user.uid}/',
             HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
         )
         
@@ -218,7 +218,7 @@ class UserAPICompatibilityTests(TestCase):
     def test_delete_user_as_non_admin(self):
         """Test DELETE /api/v1/users/{userUid} without admin permission - Should return 403"""
         response = self.client.delete(
-            f'/api/v1/users/{self.test_user2.uid}',
+            f'/api/v1/users/{self.test_user2.uid}/',
             HTTP_AUTHORIZATION=f'Bearer {self.test_token}'
         )
         
@@ -228,7 +228,7 @@ class UserAPICompatibilityTests(TestCase):
     def test_delete_user_not_found(self):
         """Test DELETE /api/v1/users/{userUid} with invalid UID - Should return 404"""
         response = self.client.delete(
-            '/api/v1/users/invalid-uid-99999',
+            '/api/v1/users/invalid-uid-99999/',
             HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
         )
         
@@ -237,7 +237,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_missions_list(self):
         """Test GET /api/v1/users/{userUid}/missions - Returns user's missions"""
-        response = self.client.get(f'/api/v1/users/{self.test_user1.uid}/missions')
+        response = self.client.get(f'/api/v1/users/{self.test_user1.uid}/missions/')
         
         # Should return 200 OK
         self.assertEqual(response.status_code, 200)
@@ -253,7 +253,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_missions_list_with_pagination(self):
         """Test GET /api/v1/users/{userUid}/missions with pagination parameters"""
-        response = self.client.get(f'/api/v1/users/{self.test_user1.uid}/missions?limit=5&offset=0')
+        response = self.client.get(f'/api/v1/users/{self.test_user1.uid}/missions/?limit=5&offset=0')
         
         # Should return 200 OK
         self.assertEqual(response.status_code, 200)
@@ -265,7 +265,7 @@ class UserAPICompatibilityTests(TestCase):
     
     def test_get_user_missions_not_found(self):
         """Test GET /api/v1/users/{userUid}/missions with invalid UID - Should return 404"""
-        response = self.client.get('/api/v1/users/invalid-uid-12345/missions')
+        response = self.client.get('/api/v1/users/invalid-uid-12345/missions/')
         
         # Should return 404 Not Found
         self.assertEqual(response.status_code, 404)

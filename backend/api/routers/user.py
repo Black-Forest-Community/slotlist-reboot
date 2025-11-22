@@ -10,10 +10,17 @@ router = Router()
 
 
 @router.get('/')
-def list_users(request, limit: int = 25, offset: int = 0):
+def list_users(request, limit: int = 25, offset: int = 0, search: str = None):
     """List all users with pagination"""
-    total = User.objects.count()
-    users = User.objects.select_related('community').all()[offset:offset + limit]
+    queryset = User.objects.select_related('community').all()
+    
+    # Apply search filter if provided
+    if search:
+        queryset = queryset.filter(nickname__icontains=search)
+    
+    total = queryset.count()
+    users = list(queryset[offset:offset + limit])
+    count = len(users)
     
     return {
         'users': [
@@ -38,20 +45,30 @@ def list_users(request, limit: int = 25, offset: int = 0):
         ],
         'limit': limit,
         'offset': offset,
-        'total': total
+        'count': count,
+        'total': total,
+        'moreAvailable': (offset + limit) < total
     }
 
 
 @router.get('/{user_uid}')
 def get_user(request, user_uid: UUID):
     """Get a single user by UID"""
-    user = get_object_or_404(User.objects.select_related('community').prefetch_related('missions'), uid=user_uid)
+    from api.models import Mission
+    
+    user = get_object_or_404(User.objects.select_related('community'), uid=user_uid)
     
     # Check if requesting user has admin permissions
     include_admin_details = False
     if request.auth:
         permissions = request.auth.get('permissions', [])
         include_admin_details = has_permission(permissions, 'admin.user')
+    
+    # Get user's missions
+    missions = Mission.objects.filter(creator=user).select_related('community').order_by('-created_at')[:10]
+    
+    # Get user's permissions
+    user_permissions = Permission.objects.filter(user=user)
     
     return {
         'user': {
@@ -70,7 +87,31 @@ def get_user(request, user_uid: UUID):
                 'repositories': user.community.repositories
             } if user.community else None,
             'active': user.active if include_admin_details else None,
-            'missions': []
+            'missions': [
+                {
+                    'uid': str(mission.uid),
+                    'slug': mission.slug,
+                    'title': mission.title,
+                    'briefingTime': mission.briefing_time.isoformat() if mission.briefing_time else None,
+                    'slottingTime': mission.slotting_time.isoformat() if mission.slotting_time else None,
+                    'startTime': mission.start_time.isoformat() if mission.start_time else None,
+                    'endTime': mission.end_time.isoformat() if mission.end_time else None,
+                    'community': {
+                        'uid': str(mission.community.uid),
+                        'name': mission.community.name,
+                        'tag': mission.community.tag,
+                        'slug': mission.community.slug
+                    } if mission.community else None
+                }
+                for mission in missions
+            ],
+            'permissions': [
+                {
+                    'uid': str(perm.uid),
+                    'permission': perm.permission
+                }
+                for perm in user_permissions
+            ]
         }
     }
 
