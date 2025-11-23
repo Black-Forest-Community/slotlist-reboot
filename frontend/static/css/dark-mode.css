@@ -323,6 +323,19 @@
   border-right-color: var(--color-bg-secondary);
 }
 
+/* Quill editor content with inline background colors - fix for visibility in dark mode */
+:root[data-theme="dark"] .ql-editor [style*="background-color"] {
+  color: #000000 !important;
+}
+
+:root[data-theme="dark"] .ql-editor strong[style*="background-color"],
+:root[data-theme="dark"] .ql-editor b[style*="background-color"],
+:root[data-theme="dark"] .ql-editor span[style*="background-color"],
+:root[data-theme="dark"] .ql-editor em[style*="background-color"],
+:root[data-theme="dark"] .ql-editor i[style*="background-color"] {
+  color: #000000 !important;
+}
+
 /* Dark mode toggle button */
 .dark-mode-toggle {
   position: fixed;
