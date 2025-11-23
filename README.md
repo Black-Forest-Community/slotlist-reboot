@@ -59,9 +59,19 @@ This will start:
 - **API Documentation**: http://localhost:8000/api/docs
 - **Django Admin**: http://localhost:8000/admin/
 
-### Production Build
+### Production Deployment
 
-For production frontend build:
+For production deployment with Nginx and Gunicorn, see the [deployment/](deployment/) folder.
+
+Quick start:
+```bash
+cd deployment
+cp .env.example .env
+# Edit .env with your production configuration
+docker compose -f docker-compose.prod.yml up -d
+```
+
+For development production build testing:
 ```bash
 docker-compose --profile production up frontend
 ```
