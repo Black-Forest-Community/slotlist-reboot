@@ -1,0 +1,17 @@
+# Environment files
+.env
+
+# SSL certificates
+ssl/
+*.pem
+*.key
+*.crt
+
+# Database backups
+*.sql
+*.sql.gz
+backup_*
+
+# Logs
+logs/
+*.log
