@@ -25,15 +25,3 @@ CONFIG_STEAM_API_SECRET=
 Run the services:
 
 `docker compose up`
-
-## Production Deployment
-
-For production deployment with Nginx and Gunicorn, see the [deployment/](deployment/) folder.
-
-Quick start:
-```bash
-cd deployment
-cp .env.example .env
-# Edit .env with your production configuration
-docker compose -f docker-compose.prod.yml up -d
-```
