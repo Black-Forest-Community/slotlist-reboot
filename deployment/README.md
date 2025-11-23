@@ -77,8 +77,12 @@ sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com
 mkdir -p ssl
 sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem ssl/cert.pem
 sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem ssl/key.pem
+sudo chmod 644 ssl/cert.pem
+sudo chmod 600 ssl/key.pem
 sudo chown $USER:$USER ssl/*.pem
 ```
+
+**Note**: For better security in production, consider using bind mounts directly to `/etc/letsencrypt` or using a certificate management solution instead of copying certificates.
 
 4. Uncomment the HTTPS server block in `nginx/default.conf`
 
