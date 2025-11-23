@@ -6,9 +6,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: slotlist
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
       - "5432:5432"
 
@@ -20,18 +20,19 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=True
-      - DB_DATABASE=slotlist
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - CONFIG_JWT_SECRET=development-secret-key-change-in-production
-      - CONFIG_JWT_ISSUER=http://localhost:8000
-      - CONFIG_JWT_AUDIENCE=http://localhost:8000
-      - CONFIG_STEAM_API_SECRET=your-steam-api-key-here
-      - DJANGO_SECRET_KEY=development-django-secret-change-in-production
-      - ALLOWED_HOSTS=*
+      - DEBUG=${DEBUG}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - CONFIG_JWT_SECRET=${CONFIG_JWT_SECRET}
+      - CONFIG_JWT_ISSUER=${CONFIG_JWT_ISSUER}
+      - CONFIG_JWT_AUDIENCE=${CONFIG_JWT_AUDIENCE}
+      - CONFIG_JWT_EXPIRESIN=${CONFIG_JWT_EXPIRESIN}
+      - CONFIG_STEAM_API_SECRET=${CONFIG_STEAM_API_SECRET
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
     depends_on:
       - db
 
