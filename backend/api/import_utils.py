@@ -63,16 +63,19 @@ def fetch_mission_data(slug: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         raise APIFetchError(f'Failed to fetch mission data: {e}')
 
 
-def get_or_create_community(community_data: Dict[str, Any]) -> Community:
+def get_or_create_community(community_data: Dict[str, Any]) -> Optional[Community]:
     """
     Get or create community from API data.
     
     Args:
-        community_data: Community data from API
+        community_data: Community data from API (can be None)
         
     Returns:
-        Community instance
+        Community instance or None if community_data is None
     """
+    if not community_data:
+        return None
+        
     community, created = Community.objects.get_or_create(
         uid=community_data['uid'],
         defaults={
@@ -275,16 +278,20 @@ def preview_import(mission_data: Dict[str, Any], slots_data: list) -> Dict[str, 
     Returns:
         Dictionary with preview information
     """
+    community_info = None
+    if mission_data.get('community'):
+        community_info = {
+            'name': mission_data['community']['name'],
+            'slug': mission_data['community']['slug'],
+        }
+    
     preview = {
         'mission': {
             'title': mission_data['title'],
             'slug': mission_data['slug'],
             'description': mission_data['description'],
             'visibility': mission_data['visibility'],
-            'community': {
-                'name': mission_data['community']['name'],
-                'slug': mission_data['community']['slug'],
-            },
+            'community': community_info,
         },
         'slot_groups': [],
         'totals': {
