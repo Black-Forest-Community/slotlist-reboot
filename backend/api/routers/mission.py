@@ -14,10 +14,12 @@ from api.schemas import (
     MissionBannerImageSchema, MissionSlotAssignSchema,
     MissionPermissionCreateSchema,
     # Response schemas
-    MissionDetailResponseSchema, MissionSlotsResponseSchema,
+    MissionDetailResponseSchema, MissionCreateResponseSchema,
+    MissionSlotsResponseSchema,
     MissionSlotGroupDetailResponseSchema, MissionSlotListResponseSchema,
     MissionSlotDetailResponseSchema, MissionSlotRegistrationResponseSchema,
-    MissionSlotRegistrationListResponseSchema
+    MissionSlotRegistrationListResponseSchema,
+    PermissionResponseSchema, PermissionListResponseSchema
 )
 from api.auth import has_permission, generate_jwt
 
@@ -156,16 +158,10 @@ def check_slug_availability(request, slug: str):
 def get_mission(request, slug: str):
     """Get a single mission by slug"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
-    
-    # Add computed fields for tech support flags
-    mission.tech_teleport = bool(mission.tech_support and 'teleport' in mission.tech_support.lower()) if mission.tech_support else False
-    mission.tech_respawn = bool(mission.tech_support and 'respawn' in mission.tech_support.lower()) if mission.tech_support else False
-    mission.rules_of_engagement = mission.rules or ''
-    
     return {'mission': mission}
 
 
-@router.post('/')
+@router.post('/', response=MissionCreateResponseSchema)
 def create_mission(request, payload: MissionCreateSchema):
     """Create a new mission"""
     user_uid = request.auth.get('user', {}).get('uid')
@@ -221,55 +217,19 @@ def create_mission(request, payload: MissionCreateSchema):
     # Generate a new JWT token with the creator permission for this mission
     new_token = generate_jwt(user)
     
+    # Reload mission with related objects for schema serialization
+    mission = Mission.objects.select_related('creator', 'community').get(uid=mission.uid)
+    
     return {
-        'token': new_token,  # Return updated token with mission.{slug}.creator permission
-        'mission': {
-            'uid': mission.uid,
-            'slug': mission.slug,
-            'title': mission.title,
-            'description': mission.description,
-            'detailedDescription': mission.detailed_description,
-            'collapsedDescription': mission.collapsed_description,
-            'briefingTime': mission.briefing_time,
-            'slottingTime': mission.slotting_time,
-            'startTime': mission.start_time,
-            'endTime': mission.end_time,
-            'visibility': mission.visibility,
-            'techTeleport': bool(mission.tech_support and 'teleport' in mission.tech_support.lower()) if mission.tech_support else False,
-            'techRespawn': bool(mission.tech_support and 'respawn' in mission.tech_support.lower()) if mission.tech_support else False,
-            'techSupport': mission.tech_support,
-            'detailsMap': mission.details_map,
-            'detailsGameMode': mission.details_game_mode,
-            'requiredDLCs': mission.required_dlcs,
-            'gameServer': mission.game_server,
-            'voiceComms': mission.voice_comms,
-            'repositories': mission.repositories,
-            'rulesOfEngagement': mission.rules or '',
-            'bannerImageUrl': mission.banner_image_url,
-            'creator': {
-                'uid': user.uid,
-                'nickname': user.nickname,
-                'steamId': user.steam_id,
-            },
-            'community': {
-                'uid': community.uid,
-                'name': community.name,
-                'tag': community.tag,
-                'slug': community.slug,
-                'website': community.website,
-                'logoUrl': community.logo_url,
-                'gameServers': community.game_servers,
-                'voiceComms': community.voice_comms,
-                'repositories': community.repositories
-            } if community else None
-        }
+        'token': new_token,
+        'mission': mission
     }
 
 
-@router.patch('/{slug}')
+@router.patch('/{slug}', response=MissionDetailResponseSchema)
 def update_mission(request, slug: str, payload: MissionUpdateSchema):
     """Update a mission"""
-    mission = get_object_or_404(Mission, slug=slug)
+    mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
     
     # Check permissions
     user_uid = request.auth.get('user', {}).get('uid')
@@ -343,48 +303,10 @@ def update_mission(request, slug: str, payload: MissionUpdateSchema):
     
     mission.save()
     
-    return {
-        'mission': {
-            'uid': mission.uid,
-            'slug': mission.slug,
-            'title': mission.title,
-            'description': mission.description,
-            'detailedDescription': mission.detailed_description,
-            'collapsedDescription': mission.collapsed_description,
-            'briefingTime': mission.briefing_time,
-            'slottingTime': mission.slotting_time,
-            'startTime': mission.start_time,
-            'endTime': mission.end_time,
-            'visibility': mission.visibility,
-            'techTeleport': bool(mission.tech_support and 'teleport' in mission.tech_support.lower()) if mission.tech_support else False,
-            'techRespawn': bool(mission.tech_support and 'respawn' in mission.tech_support.lower()) if mission.tech_support else False,
-            'techSupport': mission.tech_support,
-            'detailsMap': mission.details_map,
-            'detailsGameMode': mission.details_game_mode,
-            'requiredDLCs': mission.required_dlcs,
-            'gameServer': mission.game_server,
-            'voiceComms': mission.voice_comms,
-            'repositories': mission.repositories,
-            'rulesOfEngagement': mission.rules or '',
-            'bannerImageUrl': mission.banner_image_url,
-            'creator': {
-                'uid': mission.creator.uid,
-                'nickname': mission.creator.nickname,
-                'steamId': mission.creator.steam_id,
-            },
-            'community': {
-                'uid': mission.community.uid,
-                'name': mission.community.name,
-                'tag': mission.community.tag,
-                'slug': mission.community.slug,
-                'website': mission.community.website,
-                'logoUrl': mission.community.logo_url,
-                'gameServers': mission.community.game_servers,
-                'voiceComms': mission.community.voice_comms,
-                'repositories': mission.community.repositories
-            } if mission.community else None
-        }
-    }
+    # Reload mission to ensure we have fresh data
+    mission = Mission.objects.select_related('creator', 'community').get(uid=mission.uid)
+    
+    return {'mission': mission}
 
 
 @router.delete('/{slug}')
@@ -407,7 +329,7 @@ def delete_mission(request, slug: str):
     return {'success': True}
 
 
-@router.post('/{slug}/duplicate')
+@router.post('/{slug}/duplicate', response=MissionCreateResponseSchema)
 def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
     """Duplicate an existing mission with all its slot groups and slots"""
     from django.db import transaction
@@ -499,109 +421,49 @@ def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
     # Generate a new JWT token with the creator permission for this mission
     new_token = generate_jwt(user)
     
-    # Return the new mission details
+    # Reload mission with related objects for schema serialization
+    new_mission = Mission.objects.select_related('creator', 'community').get(uid=new_mission.uid)
+    
     return {
         'token': new_token,
-        'mission': {
-            'uid': new_mission.uid,
-            'slug': new_mission.slug,
-            'title': new_mission.title,
-            'description': new_mission.description,
-            'detailedDescription': new_mission.detailed_description,
-            'collapsedDescription': new_mission.collapsed_description,
-            'briefingTime': new_mission.briefing_time,
-            'slottingTime': new_mission.slotting_time,
-            'startTime': new_mission.start_time,
-            'endTime': new_mission.end_time,
-            'visibility': new_mission.visibility,
-            'techTeleport': bool(new_mission.tech_support and 'teleport' in new_mission.tech_support.lower()) if new_mission.tech_support else False,
-            'techRespawn': bool(new_mission.tech_support and 'respawn' in new_mission.tech_support.lower()) if new_mission.tech_support else False,
-            'techSupport': new_mission.tech_support,
-            'detailsMap': new_mission.details_map,
-            'detailsGameMode': new_mission.details_game_mode,
-            'requiredDLCs': new_mission.required_dlcs,
-            'gameServer': new_mission.game_server,
-            'voiceComms': new_mission.voice_comms,
-            'repositories': new_mission.repositories,
-            'rulesOfEngagement': new_mission.rules or '',
-            'bannerImageUrl': new_mission.banner_image_url,
-            'creator': {
-                'uid': user.uid,
-                'nickname': user.nickname,
-                'steamId': user.steam_id,
-            },
-            'community': {
-                'uid': community.uid,
-                'name': community.name,
-                'tag': community.tag,
-                'slug': community.slug,
-                'website': community.website,
-                'logoUrl': community.logo_url,
-                'gameServers': community.game_servers,
-                'voiceComms': community.voice_comms,
-                'repositories': community.repositories
-            } if community else None
-        }
+        'mission': new_mission
     }
 
 
 
-@router.get('/{slug}/slots', auth=None)
+@router.get('/{slug}/slots', auth=None, response=MissionSlotsResponseSchema)
 def get_mission_slots(request, slug: str):
     """Get all slots for a mission organized by slot groups"""
-    mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
+    mission = get_object_or_404(Mission, slug=slug)
     
     # Get all slot groups with their slots for this mission
+    # Prefetch slots with their related assignee and restricted_community
     slot_groups = MissionSlotGroup.objects.filter(mission=mission).prefetch_related(
         'slots__assignee',
         'slots__restricted_community',
         'slots__registrations'
     ).order_by('order_number')
     
+    # Build the slot groups with slots
     result = []
     for slot_group in slot_groups:
         slots = []
         for slot in slot_group.slots.order_by('order_number'):
-            # Count pending registrations for this slot (exclude confirmed/rejected)
+            # Calculate registration count for this slot
             registration_count = slot.registrations.filter(status='pending').count()
-            
-            slot_data = {
-                'uid': str(slot.uid),
-                'slotGroupUid': str(slot.slot_group.uid),
-                'title': slot.title,
-                'description': slot.description,
-                'detailedDescription': slot.detailed_description,
-                'orderNumber': slot.order_number,
-                'requiredDLCs': slot.required_dlcs,
-                'externalAssignee': slot.external_assignee,
-                'registrationCount': registration_count,
-                'blocked': slot.blocked,
-                'reserve': slot.reserve,
-                'autoAssignable': slot.auto_assignable,
-                'assignee': {
-                    'uid': str(slot.assignee.uid),
-                    'nickname': slot.assignee.nickname,
-                    'steamId': slot.assignee.steam_id,
-                } if slot.assignee else None,
-                'restrictedCommunity': {
-                    'uid': str(slot.restricted_community.uid),
-                    'name': slot.restricted_community.name,
-                    'tag': slot.restricted_community.tag,
-                    'slug': slot.restricted_community.slug,
-                } if slot.restricted_community else None
-            }
-            slots.append(slot_data)
+            slot._registration_count = registration_count
+            slots.append(slot)
         
-        group_data = {
-            'uid': str(slot_group.uid),
+        # Create a dict-like object for the slot group with slots
+        result.append({
+            'uid': slot_group.uid,
             'title': slot_group.title,
-            'description': slot_group.description,
-            'orderNumber': slot_group.order_number,
+            'description': slot_group.description or '',
+            'order_number': slot_group.order_number,
             'slots': slots
-        }
-        result.append(group_data)
+        })
     
-    return {'slotGroups': result}
+    return {'slot_groups': result}
 
 
 # Slot Registration Schemas
@@ -614,39 +476,24 @@ class SlotRegistrationUpdateSchema(BaseModel):
     suppressNotifications: Optional[bool] = False
 
 
-@router.get('/{slug}/slots/{slot_uid}/registrations', auth=None)
+@router.get('/{slug}/slots/{slot_uid}/registrations', auth=None, response=MissionSlotRegistrationListResponseSchema)
 def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, offset: int = 0):
     """Get all registrations for a specific mission slot"""
     mission = get_object_or_404(Mission, slug=slug)
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
     
     total = MissionSlotRegistration.objects.filter(slot=slot).count()
-    registrations = MissionSlotRegistration.objects.filter(slot=slot).select_related('user')[offset:offset + limit]
+    registrations = list(MissionSlotRegistration.objects.filter(slot=slot).select_related('user')[offset:offset + limit])
     
     return {
-        'registrations': [
-            {
-                'uid': str(reg.uid),
-                'slotUid': str(reg.slot.uid),
-                'user': {
-                    'uid': str(reg.user.uid),
-                    'nickname': reg.user.nickname,
-                    'steamId': reg.user.steam_id,
-                },
-                'comment': reg.comment,
-                'confirmed': reg.status == 'confirmed',
-                'status': reg.status,
-                'createdAt': reg.created_at.isoformat() if reg.created_at else None,
-            }
-            for reg in registrations
-        ],
+        'registrations': registrations,
         'limit': limit,
         'offset': offset,
         'total': total
     }
 
 
-@router.post('/{slug}/slots/{slot_uid}/registrations', response={200: dict, 400: dict, 403: dict})
+@router.post('/{slug}/slots/{slot_uid}/registrations', response={200: MissionSlotRegistrationResponseSchema, 400: dict, 403: dict})
 def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistrationCreateSchema):
     """Register the authenticated user for a mission slot"""
     user_uid = request.auth.get('user', {}).get('uid')
@@ -667,24 +514,13 @@ def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistration
         comment=data.comment
     )
     
-    return {
-        'registration': {
-            'uid': str(registration.uid),
-            'slotUid': str(slot.uid),
-            'user': {
-                'uid': str(user.uid),
-                'nickname': user.nickname,
-                'steamId': user.steam_id,
-            },
-            'comment': registration.comment,
-            'confirmed': False,
-            'status': registration.status,
-            'createdAt': registration.created_at.isoformat() if registration.created_at else None,
-        }
-    }
+    # Reload with related objects
+    registration = MissionSlotRegistration.objects.select_related('user', 'slot').get(uid=registration.uid)
+    
+    return {'registration': registration}
 
 
-@router.patch('/{slug}/slots/{slot_uid}/registrations/{registration_uid}', response={200: dict, 400: dict, 403: dict})
+@router.patch('/{slug}/slots/{slot_uid}/registrations/{registration_uid}', response={200: MissionSlotRegistrationResponseSchema, 400: dict, 403: dict})
 def update_slot_registration(request, slug: str, slot_uid: UUID, registration_uid: UUID, data: SlotRegistrationUpdateSchema):
     """Update/confirm or reject a slot registration (requires permissions)"""
     user_uid = request.auth.get('user', {}).get('uid')
@@ -693,7 +529,7 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
     
     mission = get_object_or_404(Mission, slug=slug)
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
-    registration = get_object_or_404(MissionSlotRegistration, uid=registration_uid, slot=slot)
+    registration = get_object_or_404(MissionSlotRegistration.objects.select_related('user', 'slot'), uid=registration_uid, slot=slot)
 
     
     # Check permissions - user must be mission creator or have appropriate permissions
@@ -716,20 +552,6 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
         # Update registration status to confirmed
         registration.status = 'confirmed'
         registration.save()
-        
-        return {
-            'registration': {
-                'uid': str(registration.uid),
-                'user': {
-                    'uid': str(registration.user.uid),
-                    'nickname': registration.user.nickname,
-                    'steamId': registration.user.steam_id,
-                },
-                'comment': registration.comment,
-                'confirmed': True,
-                'status': registration.status
-            }
-        }
     else:
         # If confirmed is false, reject the registration and unassign slot if needed
         # If the registration was confirmed and slot is assigned to this user, unassign the slot
@@ -740,20 +562,8 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
         # Update registration status to rejected
         registration.status = 'rejected'
         registration.save()
-        
-        return {
-            'registration': {
-                'uid': str(registration.uid),
-                'user': {
-                    'uid': str(registration.user.uid),
-                    'nickname': registration.user.nickname,
-                    'steamId': registration.user.steam_id,
-                },
-                'comment': registration.comment,
-                'confirmed': False,
-                'status': registration.status
-            }
-        }
+    
+    return {'registration': registration}
 
 
 @router.delete('/{slug}/slots/{slot_uid}/registrations/{registration_uid}', response={200: dict, 403: dict})
@@ -880,7 +690,7 @@ def unassign_slot(request, slug: str, slot_uid: UUID):
     }
 
 
-@router.post('/{slug}/slotGroups', response={200: dict, 400: dict, 403: dict})
+@router.post('/{slug}/slotGroups', response={200: MissionSlotGroupDetailResponseSchema, 400: dict, 403: dict})
 def create_mission_slot_group(request, slug: str, data: MissionSlotGroupCreateSchema):
     """Create a new slot group for a mission"""
     mission = get_object_or_404(Mission, slug=slug)
@@ -918,17 +728,17 @@ def create_mission_slot_group(request, slug: str, data: MissionSlotGroupCreateSc
     )
     
     return {
-        'slotGroup': {
-            'uid': str(slot_group.uid),
+        'slot_group': {
+            'uid': slot_group.uid,
             'title': slot_group.title,
-            'description': slot_group.description,
-            'orderNumber': slot_group.order_number,
+            'description': slot_group.description or '',
+            'order_number': slot_group.order_number,
             'slots': []
         }
     }
 
 
-@router.patch('/{slug}/slotGroups/{slot_group_uid}', response={200: dict, 400: dict, 403: dict, 404: dict})
+@router.patch('/{slug}/slotGroups/{slot_group_uid}', response={200: MissionSlotGroupDetailResponseSchema, 400: dict, 403: dict, 404: dict})
 def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: MissionSlotGroupUpdateSchema):
     """Update a slot group"""
     mission = get_object_or_404(Mission, slug=slug)
@@ -944,7 +754,7 @@ def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: Mi
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to update slot groups for this mission')
     
-    slot_group = get_object_or_404(MissionSlotGroup, uid=slot_group_uid, mission=mission)
+    slot_group = get_object_or_404(MissionSlotGroup.objects.prefetch_related('slots'), uid=slot_group_uid, mission=mission)
     
     # Update fields if provided
     if data.title is not None:
@@ -977,12 +787,18 @@ def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: Mi
     
     slot_group.save()
     
+    # Reload to get updated slots
+    slot_group = MissionSlotGroup.objects.prefetch_related(
+        'slots__assignee', 'slots__restricted_community'
+    ).get(uid=slot_group_uid)
+    
     return {
-        'slotGroup': {
-            'uid': str(slot_group.uid),
+        'slot_group': {
+            'uid': slot_group.uid,
             'title': slot_group.title,
-            'description': slot_group.description,
-            'orderNumber': slot_group.order_number
+            'description': slot_group.description or '',
+            'order_number': slot_group.order_number,
+            'slots': list(slot_group.slots.order_by('order_number'))
         }
     }
 
@@ -1018,7 +834,7 @@ def delete_mission_slot_group(request, slug: str, slot_group_uid: UUID):
     return {'success': True}
 
 
-@router.post('/{slug}/slots', response={200: dict, 400: dict, 403: dict})
+@router.post('/{slug}/slots', response={200: MissionSlotListResponseSchema, 400: dict, 403: dict})
 def create_mission_slots(request, slug: str, data: List[MissionSlotCreateSchema]):
     """Create one or more slots for a mission"""
     mission = get_object_or_404(Mission, slug=slug)
@@ -1034,7 +850,7 @@ def create_mission_slots(request, slug: str, data: List[MissionSlotCreateSchema]
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to create slots for this mission')
     
-    created_slots = []
+    created_slot_uids = []
     
     for slot_data in data:
         # Validate DLCs
@@ -1076,28 +892,17 @@ def create_mission_slots(request, slug: str, data: List[MissionSlotCreateSchema]
             auto_assignable=slot_data.autoAssignable
         )
         
-        created_slots.append({
-            'uid': str(slot.uid),
-            'slotGroupUid': str(slot.slot_group.uid),
-            'title': slot.title,
-            'description': slot.description,
-            'detailedDescription': slot.detailed_description,
-            'orderNumber': slot.order_number,
-            'requiredDLCs': slot.required_dlcs,
-            'blocked': slot.blocked,
-            'reserve': slot.reserve,
-            'autoAssignable': slot.auto_assignable,
-            'restrictedCommunity': {
-                'uid': str(restricted_community.uid),
-                'name': restricted_community.name,
-                'tag': restricted_community.tag,
-            } if restricted_community else None
-        })
+        created_slot_uids.append(slot.uid)
+    
+    # Fetch all created slots with related objects for proper serialization
+    created_slots = list(MissionSlot.objects.filter(uid__in=created_slot_uids).select_related(
+        'slot_group', 'assignee', 'restricted_community'
+    ))
     
     return {'slots': created_slots}
 
 
-@router.patch('/{slug}/slots/{slot_uid}', response={200: dict, 400: dict, 403: dict, 404: dict})
+@router.patch('/{slug}/slots/{slot_uid}', response={200: MissionSlotDetailResponseSchema, 400: dict, 403: dict, 404: dict})
 def update_mission_slot(request, slug: str, slot_uid: UUID, data: MissionSlotUpdateSchema):
     """Update a mission slot"""
     mission = get_object_or_404(Mission, slug=slug)
@@ -1113,7 +918,8 @@ def update_mission_slot(request, slug: str, slot_uid: UUID, data: MissionSlotUpd
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to update slots for this mission')
     
-    slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
+    slot = get_object_or_404(MissionSlot.objects.select_related('slot_group', 'assignee', 'restricted_community'), 
+                             uid=slot_uid, slot_group__mission=mission)
     
     # Update fields if provided
     if data.title is not None:
@@ -1164,20 +970,10 @@ def update_mission_slot(request, slug: str, slot_uid: UUID, data: MissionSlotUpd
     
     slot.save()
     
-    return {
-        'slot': {
-            'uid': str(slot.uid),
-            'slotGroupUid': str(slot.slot_group.uid),
-            'title': slot.title,
-            'description': slot.description,
-            'detailedDescription': slot.detailed_description,
-            'orderNumber': slot.order_number,
-            'requiredDLCs': slot.required_dlcs,
-            'blocked': slot.blocked,
-            'reserve': slot.reserve,
-            'autoAssignable': slot.auto_assignable
-        }
-    }
+    # Reload slot with related objects
+    slot = MissionSlot.objects.select_related('slot_group', 'assignee', 'restricted_community').get(uid=slot_uid)
+    
+    return {'slot': slot}
 
 
 @router.delete('/{slug}/slots/{slot_uid}', response={200: dict, 403: dict, 404: dict})
@@ -1310,7 +1106,7 @@ def delete_mission_banner_image(request, slug: str):
     return {'success': True}
 
 
-@router.get('/{slug}/permissions', response={200: dict, 403: dict})
+@router.get('/{slug}/permissions', response={200: PermissionListResponseSchema, 403: dict})
 def get_mission_permissions(request, slug: str, limit: int = 10, offset: int = 0):
     """Get all permissions for a mission"""
     from api.models import Permission
@@ -1328,29 +1124,19 @@ def get_mission_permissions(request, slug: str, limit: int = 10, offset: int = 0
         return 403, {'detail': 'Insufficient permissions to view mission permissions'}
     
     # Get all permissions for this mission
-    mission_permissions = Permission.objects.filter(
+    mission_permissions = list(Permission.objects.filter(
         permission__startswith=f'mission.{slug}.'
-    ).select_related('user')[offset:offset + limit]
+    ).select_related('user')[offset:offset + limit])
     
     total = Permission.objects.filter(permission__startswith=f'mission.{slug}.').count()
     
     return {
-        'permissions': [
-            {
-                'uid': perm.uid,
-                'permission': perm.permission,
-                'user': {
-                    'uid': perm.user.uid,
-                    'nickname': perm.user.nickname,
-                }
-            }
-            for perm in mission_permissions
-        ],
+        'permissions': mission_permissions,
         'total': total
     }
 
 
-@router.post('/{slug}/permissions', response={200: dict, 403: dict, 400: dict})
+@router.post('/{slug}/permissions', response={200: PermissionResponseSchema, 403: dict, 400: dict})
 def create_mission_permission(request, slug: str, payload: MissionPermissionCreateSchema):
     """Create a permission for a mission"""
     from api.models import Permission, User
@@ -1402,16 +1188,10 @@ def create_mission_permission(request, slug: str, payload: MissionPermissionCrea
         permission=permission_str
     )
     
-    return {
-        'permission': {
-            'uid': permission.uid,
-            'permission': permission.permission,
-            'user': {
-                'uid': target_user.uid,
-                'nickname': target_user.nickname,
-            }
-        }
-    }
+    # Reload with user
+    permission = Permission.objects.select_related('user').get(uid=permission.uid)
+    
+    return {'permission': permission}
 
 
 @router.delete('/{slug}/permissions/{permission_uid}', response={200: dict, 403: dict})
