@@ -645,7 +645,7 @@ class SlotRegistrationUpdateSchema(BaseModel):
     suppressNotifications: Optional[bool] = False
 
 
-@router.get('/{slug}/slots/{slot_uid}/registrations')
+@router.get('/{slug}/slots/{slot_uid}/registrations', auth=None)
 def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, offset: int = 0):
     """Get all registrations for a specific mission slot"""
     mission = get_object_or_404(Mission, slug=slug)
