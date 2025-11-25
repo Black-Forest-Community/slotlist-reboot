@@ -48,7 +48,7 @@ class PermissionSchema(Schema):
 class MissionSlotGroupSchema(Schema):
     uid: UUID
     title: str
-    description: Optional[str] = ''
+    description: str = ''
     order_number: int = Field(alias='orderNumber', serialization_alias='orderNumber')
     
     class Config:
@@ -60,8 +60,8 @@ class MissionSlotSchema(Schema):
     uid: UUID
     slot_group_uid: UUID = Field(alias='slotGroupUid', serialization_alias='slotGroupUid')
     title: str
-    description: Optional[str] = ''
-    detailed_description: Optional[str] = Field('', alias='detailedDescription', serialization_alias='detailedDescription')
+    description: str = ''
+    detailed_description: str = Field('', alias='detailedDescription', serialization_alias='detailedDescription')
     order_number: int = Field(alias='orderNumber', serialization_alias='orderNumber')
     required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs', serialization_alias='requiredDLCs')
     external_assignee: Optional[str] = Field(None, alias='externalAssignee', serialization_alias='externalAssignee')
