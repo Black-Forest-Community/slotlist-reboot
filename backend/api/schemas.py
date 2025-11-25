@@ -169,6 +169,20 @@ class MissionUpdateSchema(Schema):
         populate_by_name = True
 
 
+class MissionDuplicateSchema(Schema):
+    slug: str
+    title: Optional[str] = None
+    briefing_time: Optional[datetime] = Field(None, alias='briefingTime')
+    slotting_time: Optional[datetime] = Field(None, alias='slottingTime')
+    start_time: Optional[datetime] = Field(None, alias='startTime')
+    end_time: Optional[datetime] = Field(None, alias='endTime')
+    visibility: Optional[str] = 'hidden'
+    add_to_community: Optional[bool] = Field(False, alias='addToCommunity')
+    
+    class Config:
+        populate_by_name = True
+
+
 class UserUpdateSchema(Schema):
     nickname: Optional[str] = None
 
@@ -279,6 +293,7 @@ class MissionSlotCreateSchema(Schema):
     reserve: bool = False
     autoAssignable: bool = True
     insertAfter: int = 0
+    duplicate: Optional[bool] = None  # Frontend sends this flag when duplicating, we can ignore it
 
 
 class MissionSlotUpdateSchema(Schema):

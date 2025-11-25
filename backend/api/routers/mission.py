@@ -8,7 +8,7 @@ from django.utils.text import slugify
 from pydantic import BaseModel
 from api.models import Mission, Community, User, MissionSlotGroup, MissionSlot, ArmaThreeDLC, MissionSlotRegistration
 from api.schemas import (
-    MissionCreateSchema, MissionUpdateSchema, 
+    MissionCreateSchema, MissionUpdateSchema, MissionDuplicateSchema,
     MissionSlotGroupCreateSchema, MissionSlotGroupUpdateSchema,
     MissionSlotCreateSchema, MissionSlotUpdateSchema,
     MissionBannerImageSchema, MissionSlotAssignSchema,
@@ -438,6 +438,145 @@ def delete_mission(request, slug: str):
     return {'success': True}
 
 
+@router.post('/{slug}/duplicate')
+def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
+    """Duplicate an existing mission with all its slot groups and slots"""
+    from django.db import transaction
+    
+    # Get the original mission
+    original_mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
+    
+    # Get current user
+    user_uid = request.auth.get('user', {}).get('uid')
+    user = get_object_or_404(User, uid=user_uid)
+    
+    # Check permissions - must be creator or admin
+    permissions = request.auth.get('permissions', [])
+    is_creator = str(original_mission.creator.uid) == user_uid
+    is_admin = has_permission(permissions, 'admin.mission')
+    
+    if not is_creator and not is_admin:
+        return 403, {'detail': 'Forbidden'}
+    
+    # Check if new slug is available
+    if Mission.objects.filter(slug=payload.slug).exists():
+        return 400, {'detail': 'Mission with this slug already exists'}
+    
+    # Determine community for new mission
+    community = None
+    if payload.add_to_community and user.community:
+        community = user.community
+    elif not payload.add_to_community:
+        community = original_mission.community
+    
+    # Create the duplicated mission in a transaction
+    with transaction.atomic():
+        # Create new mission
+        new_mission = Mission.objects.create(
+            slug=payload.slug,
+            title=payload.title if payload.title else original_mission.title,
+            description=original_mission.description,
+            short_description=original_mission.short_description,
+            detailed_description=original_mission.detailed_description,
+            collapsed_description=original_mission.collapsed_description,
+            briefing_time=payload.briefing_time if payload.briefing_time else original_mission.briefing_time,
+            slotting_time=payload.slotting_time if payload.slotting_time else original_mission.slotting_time,
+            start_time=payload.start_time if payload.start_time else original_mission.start_time,
+            end_time=payload.end_time if payload.end_time else original_mission.end_time,
+            visibility=payload.visibility if payload.visibility else 'hidden',
+            tech_support=original_mission.tech_support,
+            details_map=original_mission.details_map,
+            details_game_mode=original_mission.details_game_mode,
+            required_dlcs=original_mission.required_dlcs,
+            game_server=original_mission.game_server,
+            voice_comms=original_mission.voice_comms,
+            repositories=original_mission.repositories,
+            rules=original_mission.rules,
+            creator=user,
+            community=community,
+            banner_image_url=original_mission.banner_image_url
+        )
+        
+        # Duplicate slot groups and slots
+        original_slot_groups = MissionSlotGroup.objects.filter(mission=original_mission).order_by('order_number')
+        
+        for slot_group in original_slot_groups:
+            # Create new slot group
+            new_slot_group = MissionSlotGroup.objects.create(
+                mission=new_mission,
+                title=slot_group.title,
+                description=slot_group.description,
+                order_number=slot_group.order_number
+            )
+            
+            # Duplicate slots in this group
+            original_slots = MissionSlot.objects.filter(slot_group=slot_group).order_by('order_number')
+            
+            for slot in original_slots:
+                MissionSlot.objects.create(
+                    slot_group=new_slot_group,
+                    title=slot.title,
+                    description=slot.description,
+                    detailed_description=slot.detailed_description,
+                    order_number=slot.order_number,
+                    required_dlcs=slot.required_dlcs,
+                    restricted_community=slot.restricted_community,
+                    blocked=slot.blocked,
+                    reserve=slot.reserve,
+                    auto_assignable=slot.auto_assignable
+                    # Note: Not copying assignee or external_assignee - duplicated mission starts with empty slots
+                )
+    
+    # Generate a new JWT token with the creator permission for this mission
+    new_token = generate_jwt(user)
+    
+    # Return the new mission details
+    return {
+        'token': new_token,
+        'mission': {
+            'uid': new_mission.uid,
+            'slug': new_mission.slug,
+            'title': new_mission.title,
+            'description': new_mission.description,
+            'detailedDescription': new_mission.detailed_description,
+            'collapsedDescription': new_mission.collapsed_description,
+            'briefingTime': new_mission.briefing_time,
+            'slottingTime': new_mission.slotting_time,
+            'startTime': new_mission.start_time,
+            'endTime': new_mission.end_time,
+            'visibility': new_mission.visibility,
+            'techTeleport': bool(new_mission.tech_support and 'teleport' in new_mission.tech_support.lower()) if new_mission.tech_support else False,
+            'techRespawn': bool(new_mission.tech_support and 'respawn' in new_mission.tech_support.lower()) if new_mission.tech_support else False,
+            'techSupport': new_mission.tech_support,
+            'detailsMap': new_mission.details_map,
+            'detailsGameMode': new_mission.details_game_mode,
+            'requiredDLCs': new_mission.required_dlcs,
+            'gameServer': new_mission.game_server,
+            'voiceComms': new_mission.voice_comms,
+            'repositories': new_mission.repositories,
+            'rulesOfEngagement': new_mission.rules or '',
+            'bannerImageUrl': new_mission.banner_image_url,
+            'creator': {
+                'uid': user.uid,
+                'nickname': user.nickname,
+                'steamId': user.steam_id,
+            },
+            'community': {
+                'uid': community.uid,
+                'name': community.name,
+                'tag': community.tag,
+                'slug': community.slug,
+                'website': community.website,
+                'logoUrl': community.logo_url,
+                'gameServers': community.game_servers,
+                'voiceComms': community.voice_comms,
+                'repositories': community.repositories
+            } if community else None
+        }
+    }
+
+
+
 @router.get('/{slug}/slots', auth=None)
 def get_mission_slots(request, slug: str):
     """Get all slots for a mission organized by slot groups"""
@@ -459,6 +598,7 @@ def get_mission_slots(request, slug: str):
             
             slot_data = {
                 'uid': str(slot.uid),
+                'slotGroupUid': str(slot.slot_group.uid),
                 'title': slot.title,
                 'description': slot.description,
                 'detailedDescription': slot.detailed_description,
@@ -952,6 +1092,7 @@ def create_mission_slots(request, slug: str, data: List[MissionSlotCreateSchema]
         
         created_slots.append({
             'uid': str(slot.uid),
+            'slotGroupUid': str(slot.slot_group.uid),
             'title': slot.title,
             'description': slot.description,
             'detailedDescription': slot.detailed_description,
@@ -1040,6 +1181,7 @@ def update_mission_slot(request, slug: str, slot_uid: UUID, data: MissionSlotUpd
     return {
         'slot': {
             'uid': str(slot.uid),
+            'slotGroupUid': str(slot.slot_group.uid),
             'title': slot.title,
             'description': slot.description,
             'detailedDescription': slot.detailed_description,
