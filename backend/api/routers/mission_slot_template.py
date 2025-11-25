@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from typing import Optional, Any, List as ListType
 from uuid import UUID
 from api.models import MissionSlotTemplate, User, Community
+from api.schemas import MissionSlotTemplateListResponseSchema, MissionSlotTemplateDetailResponseSchema
 from api.auth import has_permission
 
 router = Router()
@@ -20,38 +21,19 @@ class MissionSlotTemplateUpdateSchema(Schema):
     communityUid: Optional[UUID] = None
 
 
-@router.get('/', auth=None)
+@router.get('/', auth=None, response=MissionSlotTemplateListResponseSchema)
 def list_mission_slot_templates(request, limit: int = 25, offset: int = 0):
     """List all mission slot templates with pagination"""
     total = MissionSlotTemplate.objects.count()
-    templates = MissionSlotTemplate.objects.select_related('creator', 'community').all()[offset:offset + limit]
+    templates = list(MissionSlotTemplate.objects.select_related('creator', 'community').all()[offset:offset + limit])
     
     return {
-        'slotTemplates': [
-            {
-                'uid': str(template.uid),
-                'title': template.title,
-                'slotGroups': template.slot_groups,
-                'creator': {
-                    'uid': str(template.creator.uid),
-                    'nickname': template.creator.nickname,
-                },
-                'community': {
-                    'uid': str(template.community.uid),
-                    'name': template.community.name,
-                    'tag': template.community.tag,
-                    'slug': template.community.slug,
-                } if template.community else None,
-                'createdAt': template.created_at.isoformat() if template.created_at else None,
-                'updatedAt': template.updated_at.isoformat() if template.updated_at else None,
-            }
-            for template in templates
-        ],
+        'slot_templates': templates,
         'total': total
     }
 
 
-@router.get('/{uid}', auth=None)
+@router.get('/{uid}', auth=None, response=MissionSlotTemplateDetailResponseSchema)
 def get_mission_slot_template(request, uid: UUID):
     """Get a single mission slot template by UID"""
     template = get_object_or_404(MissionSlotTemplate.objects.select_related('creator', 'community'), uid=uid)
@@ -71,28 +53,13 @@ def get_mission_slot_template(request, uid: UUID):
             # Skip non-dict items
             continue
     
-    return {
-        'slotTemplate': {
-            'uid': str(template.uid),
-            'title': template.title,
-            'slotGroups': slot_groups_copy,
-            'creator': {
-                'uid': str(template.creator.uid),
-                'nickname': template.creator.nickname,
-            },
-            'community': {
-                'uid': str(template.community.uid),
-                'name': template.community.name,
-                'tag': template.community.tag,
-                'slug': template.community.slug,
-            } if template.community else None,
-            'createdAt': template.created_at.isoformat() if template.created_at else None,
-            'updatedAt': template.updated_at.isoformat() if template.updated_at else None,
-        }
-    }
+    # Set the processed slot_groups
+    template._slot_groups_processed = slot_groups_copy
+    
+    return {'slot_template': template}
 
 
-@router.post('/')
+@router.post('/', response=MissionSlotTemplateDetailResponseSchema)
 def create_mission_slot_template(request, payload: MissionSlotTemplateCreateSchema):
     """Create a new mission slot template"""
     if not request.auth:
@@ -115,35 +82,10 @@ def create_mission_slot_template(request, payload: MissionSlotTemplateCreateSche
         community=community
     )
     
-    # Ensure slot groups have slots arrays
-    slot_groups = template.slot_groups or []
-    slot_groups_copy = []
-    for group in slot_groups:
-        if isinstance(group, dict):
-            group_copy = dict(group)
-            if 'slots' not in group_copy:
-                group_copy['slots'] = []
-            slot_groups_copy.append(group_copy)
+    # Reload with related objects
+    template = MissionSlotTemplate.objects.select_related('creator', 'community').get(uid=template.uid)
     
-    return {
-        'slotTemplate': {
-            'uid': str(template.uid),
-            'title': template.title,
-            'slotGroups': slot_groups_copy,
-            'creator': {
-                'uid': str(template.creator.uid),
-                'nickname': template.creator.nickname,
-            },
-            'community': {
-                'uid': str(template.community.uid),
-                'name': template.community.name,
-                'tag': template.community.tag,
-                'slug': template.community.slug,
-            } if template.community else None,
-            'createdAt': template.created_at.isoformat() if template.created_at else None,
-            'updatedAt': template.updated_at.isoformat() if template.updated_at else None,
-        }
-    }
+    return {'slot_template': template}
 
 
 @router.delete('/{uid}')
@@ -165,7 +107,7 @@ def delete_mission_slot_template(request, uid: UUID):
     return {'success': True}
 
 
-@router.patch('/{uid}', response={200: dict, 401: dict, 403: dict})
+@router.patch('/{uid}', response={200: MissionSlotTemplateDetailResponseSchema, 401: dict, 403: dict})
 def update_mission_slot_template(request, uid: UUID, payload: MissionSlotTemplateUpdateSchema):
     """Update a mission slot template"""
     if not request.auth:
@@ -194,32 +136,7 @@ def update_mission_slot_template(request, uid: UUID, payload: MissionSlotTemplat
     
     template.save()
     
-    # Ensure slot groups have slots arrays
-    slot_groups = template.slot_groups or []
-    slot_groups_copy = []
-    for group in slot_groups:
-        if isinstance(group, dict):
-            group_copy = dict(group)
-            if 'slots' not in group_copy:
-                group_copy['slots'] = []
-            slot_groups_copy.append(group_copy)
+    # Reload with related objects
+    template = MissionSlotTemplate.objects.select_related('creator', 'community').get(uid=uid)
     
-    return {
-        'slotTemplate': {
-            'uid': str(template.uid),
-            'title': template.title,
-            'slotGroups': slot_groups_copy,
-            'creator': {
-                'uid': str(template.creator.uid),
-                'nickname': template.creator.nickname,
-            },
-            'community': {
-                'uid': str(template.community.uid),
-                'name': template.community.name,
-                'tag': template.community.tag,
-                'slug': template.community.slug,
-            } if template.community else None,
-            'createdAt': template.created_at.isoformat() if template.created_at else None,
-            'updatedAt': template.updated_at.isoformat() if template.updated_at else None,
-        }
-    }
+    return {'slot_template': template}

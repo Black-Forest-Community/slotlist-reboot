@@ -3,13 +3,17 @@ from django.shortcuts import get_object_or_404
 from typing import List
 from uuid import UUID
 from api.models import User, Permission
-from api.schemas import UserUpdateSchema, PermissionSchema
+from api.schemas import (
+    UserUpdateSchema, PermissionSchema,
+    UserListResponseSchema, UserDetailResponseSchema,
+    UserMissionsResponseSchema
+)
 from api.auth import has_permission
 
 router = Router()
 
 
-@router.get('/')
+@router.get('/', response=UserListResponseSchema)
 def list_users(request, limit: int = 25, offset: int = 0, search: str = None):
     """List all users with pagination"""
     queryset = User.objects.select_related('community').all()
@@ -23,35 +27,16 @@ def list_users(request, limit: int = 25, offset: int = 0, search: str = None):
     count = len(users)
     
     return {
-        'users': [
-            {
-                'uid': str(user.uid),
-                'nickname': user.nickname,
-                'steamId': user.steam_id,
-                'community': {
-                    'uid': str(user.community.uid),
-                    'name': user.community.name,
-                    'tag': user.community.tag,
-                    'slug': user.community.slug,
-                    'website': user.community.website,
-                    'logoUrl': user.community.logo_url,
-                    'gameServers': user.community.game_servers,
-                    'voiceComms': user.community.voice_comms,
-                    'repositories': user.community.repositories
-                } if user.community else None,
-                'active': user.active
-            }
-            for user in users
-        ],
+        'users': users,
         'limit': limit,
         'offset': offset,
         'count': count,
         'total': total,
-        'moreAvailable': (offset + limit) < total
+        'more_available': (offset + limit) < total
     }
 
 
-@router.get('/{user_uid}')
+@router.get('/{user_uid}', response=UserDetailResponseSchema)
 def get_user(request, user_uid: UUID):
     """Get a single user by UID"""
     from api.models import Mission
@@ -65,58 +50,25 @@ def get_user(request, user_uid: UUID):
         include_admin_details = has_permission(permissions, 'admin.user')
     
     # Get user's missions
-    missions = Mission.objects.filter(creator=user).select_related('community').order_by('-created_at')[:10]
+    missions = list(Mission.objects.filter(creator=user).select_related('creator', 'community').order_by('-created_at')[:10])
     
     # Get user's permissions
-    user_permissions = Permission.objects.filter(user=user)
+    user_permissions = list(Permission.objects.filter(user=user))
     
     return {
         'user': {
-            'uid': str(user.uid),
+            'uid': user.uid,
             'nickname': user.nickname,
-            'steamId': user.steam_id if include_admin_details else None,
-            'community': {
-                'uid': str(user.community.uid),
-                'name': user.community.name,
-                'tag': user.community.tag,
-                'slug': user.community.slug,
-                'website': user.community.website,
-                'logoUrl': user.community.logo_url,
-                'gameServers': user.community.game_servers,
-                'voiceComms': user.community.voice_comms,
-                'repositories': user.community.repositories
-            } if user.community else None,
+            'steam_id': user.steam_id if include_admin_details else None,
+            'community': user.community,
             'active': user.active if include_admin_details else None,
-            'missions': [
-                {
-                    'uid': str(mission.uid),
-                    'slug': mission.slug,
-                    'title': mission.title,
-                    'briefingTime': mission.briefing_time.isoformat() if mission.briefing_time else None,
-                    'slottingTime': mission.slotting_time.isoformat() if mission.slotting_time else None,
-                    'startTime': mission.start_time.isoformat() if mission.start_time else None,
-                    'endTime': mission.end_time.isoformat() if mission.end_time else None,
-                    'community': {
-                        'uid': str(mission.community.uid),
-                        'name': mission.community.name,
-                        'tag': mission.community.tag,
-                        'slug': mission.community.slug
-                    } if mission.community else None
-                }
-                for mission in missions
-            ],
-            'permissions': [
-                {
-                    'uid': str(perm.uid),
-                    'permission': perm.permission
-                }
-                for perm in user_permissions
-            ]
+            'missions': missions,
+            'permissions': user_permissions
         }
     }
 
 
-@router.patch('/{user_uid}')
+@router.patch('/{user_uid}', response=UserDetailResponseSchema)
 def update_user(request, user_uid: UUID, payload: UserUpdateSchema):
     """Update a user"""
     user = get_object_or_404(User.objects.select_related('community'), uid=user_uid)
@@ -134,28 +86,23 @@ def update_user(request, user_uid: UUID, payload: UserUpdateSchema):
     
     user.save()
     
+    # Reload user
+    user = User.objects.select_related('community').get(uid=user_uid)
+    
     return {
         'user': {
-            'uid': str(user.uid),
+            'uid': user.uid,
             'nickname': user.nickname,
-            'steamId': None,
-            'community': {
-                'uid': str(user.community.uid),
-                'name': user.community.name,
-                'tag': user.community.tag,
-                'slug': user.community.slug,
-                'website': user.community.website,
-                'logoUrl': user.community.logo_url,
-                'gameServers': user.community.game_servers,
-                'voiceComms': user.community.voice_comms,
-                'repositories': user.community.repositories
-            } if user.community else None,
-            'active': None
+            'steam_id': None,
+            'community': user.community,
+            'active': None,
+            'missions': [],
+            'permissions': []
         }
     }
 
 
-@router.get('/{user_uid}/missions')
+@router.get('/{user_uid}/missions', response=UserMissionsResponseSchema)
 def list_user_missions(request, user_uid: UUID, limit: int = 10, offset: int = 0, includeEnded: bool = True):
     """List missions created by a user"""
     from api.models import Mission
@@ -175,37 +122,16 @@ def list_user_missions(request, user_uid: UUID, limit: int = 10, offset: int = 0
     total = queryset.count()
     
     # Apply pagination
-    missions = queryset.order_by('-created_at')[offset:offset + limit]
+    missions = list(queryset.order_by('-created_at')[offset:offset + limit])
+    count = len(missions)
     
     return {
-        'missions': [
-            {
-                'uid': str(mission.uid),
-                'slug': mission.slug,
-                'title': mission.title,
-                'briefingTime': mission.briefing_time.isoformat() if mission.briefing_time else None,
-                'slottingTime': mission.slotting_time.isoformat() if mission.slotting_time else None,
-                'startTime': mission.start_time.isoformat() if mission.start_time else None,
-                'endTime': mission.end_time.isoformat() if mission.end_time else None,
-                'visibility': mission.visibility,
-                'creator': {
-                    'uid': str(mission.creator.uid),
-                    'nickname': mission.creator.nickname
-                } if mission.creator else None,
-                'community': {
-                    'uid': str(mission.community.uid),
-                    'name': mission.community.name,
-                    'tag': mission.community.tag,
-                    'slug': mission.community.slug
-                } if mission.community else None
-            }
-            for mission in missions
-        ],
+        'missions': missions,
         'limit': limit,
         'offset': offset,
-        'count': len(missions),
+        'count': count,
         'total': total,
-        'moreAvailable': (offset + limit) < total
+        'more_available': (offset + limit) < total
     }
 
 
@@ -216,11 +142,8 @@ def list_user_permissions(request, user_uid: UUID):
     if not has_permission(permissions, 'admin.permission'):
         return 403, {'detail': 'Forbidden'}
     
-    user_permissions = Permission.objects.filter(user__uid=user_uid)
-    return [
-        {'uid': perm.uid, 'permission': perm.permission}
-        for perm in user_permissions
-    ]
+    user_permissions = list(Permission.objects.filter(user__uid=user_uid))
+    return user_permissions
 
 
 @router.post('/{user_uid}/permissions', response=PermissionSchema)
@@ -233,7 +156,7 @@ def create_user_permission(request, user_uid: UUID, permission: str):
     user = get_object_or_404(User, uid=user_uid)
     perm, created = Permission.objects.get_or_create(user=user, permission=permission)
     
-    return {'uid': perm.uid, 'permission': perm.permission}
+    return perm
 
 
 @router.delete('/{user_uid}/permissions/{permission_uid}')
