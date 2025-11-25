@@ -109,12 +109,26 @@ class CommunityApplicationSchema(Schema):
 
 class NotificationSchema(Schema):
     uid: UUID
-    notification_type: str
+    notification_type: str = Field(..., alias='notificationType')
     title: Optional[str] = None
     message: str
-    additional_data: Optional[Any] = None
+    additional_data: Optional[Any] = Field(None, alias='additionalData')
     read: bool
-    created_at: datetime
+    created_at: datetime = Field(..., alias='createdAt')
+    
+    class Config:
+        populate_by_name = True
+
+
+class NotificationListResponseSchema(Schema):
+    notifications: List['NotificationSchema']
+    limit: int
+    offset: int
+    total: int
+
+
+class NotificationDetailResponseSchema(Schema):
+    notification: NotificationSchema
 
 
 # Input Schemas for creating/updating
