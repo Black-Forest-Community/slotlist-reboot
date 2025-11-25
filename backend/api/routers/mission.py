@@ -12,7 +12,12 @@ from api.schemas import (
     MissionSlotGroupCreateSchema, MissionSlotGroupUpdateSchema,
     MissionSlotCreateSchema, MissionSlotUpdateSchema,
     MissionBannerImageSchema, MissionSlotAssignSchema,
-    MissionPermissionCreateSchema
+    MissionPermissionCreateSchema,
+    # Response schemas
+    MissionDetailResponseSchema, MissionSlotsResponseSchema,
+    MissionSlotGroupDetailResponseSchema, MissionSlotListResponseSchema,
+    MissionSlotDetailResponseSchema, MissionSlotRegistrationResponseSchema,
+    MissionSlotRegistrationListResponseSchema
 )
 from api.auth import has_permission, generate_jwt
 
@@ -147,53 +152,17 @@ def check_slug_availability(request, slug: str):
     }
 
 
-@router.get('/{slug}', auth=None)
+@router.get('/{slug}', auth=None, response=MissionDetailResponseSchema)
 def get_mission(request, slug: str):
     """Get a single mission by slug"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
     
-    mission_data = {
-        'uid': mission.uid,
-        'slug': mission.slug,
-        'title': mission.title,
-        'description': mission.description,
-        'detailedDescription': mission.detailed_description,
-        'collapsedDescription': mission.collapsed_description,
-        'briefingTime': mission.briefing_time,
-        'slottingTime': mission.slotting_time,
-        'startTime': mission.start_time,
-        'endTime': mission.end_time,
-        'visibility': mission.visibility,
-        'techTeleport': bool(mission.tech_support and 'teleport' in mission.tech_support.lower()) if mission.tech_support else False,
-        'techRespawn': bool(mission.tech_support and 'respawn' in mission.tech_support.lower()) if mission.tech_support else False,
-        'techSupport': mission.tech_support,
-        'detailsMap': mission.details_map,
-        'detailsGameMode': mission.details_game_mode,
-        'requiredDLCs': mission.required_dlcs,
-        'gameServer': mission.game_server,
-        'voiceComms': mission.voice_comms,
-        'repositories': mission.repositories,
-        'rulesOfEngagement': mission.rules or '',
-        'bannerImageUrl': mission.banner_image_url,
-        'creator': {
-            'uid': mission.creator.uid,
-            'nickname': mission.creator.nickname,
-            'steamId': mission.creator.steam_id,
-        },
-        'community': {
-            'uid': mission.community.uid,
-            'name': mission.community.name,
-            'tag': mission.community.tag,
-            'slug': mission.community.slug,
-            'website': mission.community.website,
-            'logoUrl': mission.community.logo_url,
-            'gameServers': mission.community.game_servers,
-            'voiceComms': mission.community.voice_comms,
-            'repositories': mission.community.repositories
-        } if mission.community else None
-    }
+    # Add computed fields for tech support flags
+    mission.tech_teleport = bool(mission.tech_support and 'teleport' in mission.tech_support.lower()) if mission.tech_support else False
+    mission.tech_respawn = bool(mission.tech_support and 'respawn' in mission.tech_support.lower()) if mission.tech_support else False
+    mission.rules_of_engagement = mission.rules or ''
     
-    return {'mission': mission_data}
+    return {'mission': mission}
 
 
 @router.post('/')

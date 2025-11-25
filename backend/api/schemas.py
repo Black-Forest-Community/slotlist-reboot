@@ -10,18 +10,24 @@ class CommunitySchema(Schema):
     tag: str
     slug: str
     website: Optional[str] = None
-    image_url: Optional[str] = None
-    game_servers: Optional[List[Any]] = None
-    voice_comms: Optional[List[Any]] = None
+    logo_url: Optional[str] = Field(None, alias='logoUrl')
+    game_servers: Optional[List[Any]] = Field(None, alias='gameServers')
+    voice_comms: Optional[List[Any]] = Field(None, alias='voiceComms')
     repositories: Optional[List[Any]] = None
+    
+    class Config:
+        populate_by_name = True
 
 
 class UserSchema(Schema):
     uid: UUID
     nickname: str
-    steam_id: Optional[str] = None
+    steam_id: Optional[str] = Field(None, alias='steamId')
     community: Optional[CommunitySchema] = None
     active: Optional[bool] = None
+    
+    class Config:
+        populate_by_name = True
 
 
 class UserDetailSchema(UserSchema):
@@ -37,28 +43,43 @@ class MissionSlotGroupSchema(Schema):
     uid: UUID
     title: str
     description: str
-    order_number: int
+    order_number: int = Field(alias='orderNumber')
+    
+    class Config:
+        populate_by_name = True
 
 
 class MissionSlotSchema(Schema):
     uid: UUID
+    slot_group_uid: UUID = Field(alias='slotGroupUid')
     title: str
     description: str
-    detailed_description: str
-    order_number: int
-    required_dlcs: Optional[List[str]] = None
+    detailed_description: str = Field(alias='detailedDescription')
+    order_number: int = Field(alias='orderNumber')
+    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs')
+    external_assignee: Optional[str] = Field(None, alias='externalAssignee')
+    registration_count: int = Field(0, alias='registrationCount')
     assignee: Optional[UserSchema] = None
-    restricted_community: Optional[CommunitySchema] = None
+    restricted_community: Optional[CommunitySchema] = Field(None, alias='restrictedCommunity')
     blocked: bool
     reserve: bool
-    auto_assignable: bool
+    auto_assignable: bool = Field(alias='autoAssignable')
+    
+    class Config:
+        populate_by_name = True
 
 
 class MissionSlotRegistrationSchema(Schema):
     uid: UUID
+    slot_uid: UUID = Field(alias='slotUid')
     user: UserSchema
-    slot: MissionSlotSchema
-    comment: str
+    comment: Optional[str] = None
+    status: str
+    confirmed: bool
+    created_at: datetime = Field(alias='createdAt')
+    
+    class Config:
+        populate_by_name = True
 
 
 class MissionSchema(Schema):
@@ -66,23 +87,87 @@ class MissionSchema(Schema):
     slug: str
     title: str
     description: str
-    briefing_time: Optional[datetime] = None
-    slot_list_time: Optional[datetime] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    detailed_description: str = Field('', alias='detailedDescription')
+    collapsed_description: Optional[str] = Field(None, alias='collapsedDescription')
+    briefing_time: Optional[datetime] = Field(None, alias='briefingTime')
+    slotting_time: Optional[datetime] = Field(None, alias='slottingTime')
+    start_time: Optional[datetime] = Field(None, alias='startTime')
+    end_time: Optional[datetime] = Field(None, alias='endTime')
     visibility: str
-    tech_teleport: bool
-    tech_respawn: bool
-    details_map: Optional[str] = None
-    details_game_mode: Optional[str] = None
-    details_required_dlcs: Optional[List[str]] = None
-    game_server: Optional[Any] = None
-    voice_comms: Optional[Any] = None
+    tech_teleport: bool = Field(alias='techTeleport')
+    tech_respawn: bool = Field(alias='techRespawn')
+    tech_support: Optional[str] = Field(None, alias='techSupport')
+    details_map: Optional[str] = Field(None, alias='detailsMap')
+    details_game_mode: Optional[str] = Field(None, alias='detailsGameMode')
+    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs')
+    game_server: Optional[Any] = Field(None, alias='gameServer')
+    voice_comms: Optional[Any] = Field(None, alias='voiceComms')
     repositories: Optional[List[Any]] = None
-    rules_of_engagement: str
-    image_url: Optional[str] = None
+    rules_of_engagement: str = Field('', alias='rulesOfEngagement')
+    banner_image_url: Optional[str] = Field(None, alias='bannerImageUrl')
     creator: UserSchema
     community: Optional[CommunitySchema] = None
+    
+    class Config:
+        populate_by_name = True
+
+
+# Mission Response Schemas
+class MissionDetailResponseSchema(Schema):
+    mission: MissionSchema
+
+
+class MissionListItemSchema(Schema):
+    """Simplified mission schema for list view"""
+    uid: UUID
+    slug: str
+    title: str
+    description: str
+    briefing_time: Optional[datetime] = Field(None, alias='briefingTime')
+    slotting_time: Optional[datetime] = Field(None, alias='slottingTime')
+    start_time: Optional[datetime] = Field(None, alias='startTime')
+    end_time: Optional[datetime] = Field(None, alias='endTime')
+    visibility: str
+    details_map: Optional[str] = Field(None, alias='detailsMap')
+    details_game_mode: Optional[str] = Field(None, alias='detailsGameMode')
+    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs')
+    banner_image_url: Optional[str] = Field(None, alias='bannerImageUrl')
+    creator: UserSchema
+    community: Optional[CommunitySchema] = None
+    
+    class Config:
+        populate_by_name = True
+
+
+class MissionSlotGroupWithSlotsSchema(MissionSlotGroupSchema):
+    slots: List[MissionSlotSchema]
+
+
+class MissionSlotsResponseSchema(Schema):
+    slot_groups: List[MissionSlotGroupWithSlotsSchema] = Field(alias='slotGroups')
+
+
+class MissionSlotGroupDetailResponseSchema(Schema):
+    slot_group: MissionSlotGroupWithSlotsSchema = Field(alias='slotGroup')
+
+
+class MissionSlotListResponseSchema(Schema):
+    slots: List[MissionSlotSchema]
+
+
+class MissionSlotDetailResponseSchema(Schema):
+    slot: MissionSlotSchema
+
+
+class MissionSlotRegistrationResponseSchema(Schema):
+    registration: MissionSlotRegistrationSchema
+
+
+class MissionSlotRegistrationListResponseSchema(Schema):
+    registrations: List[MissionSlotRegistrationSchema]
+    limit: int
+    offset: int
+    total: int
 
 
 class MissionSlotTemplateSchema(Schema):
