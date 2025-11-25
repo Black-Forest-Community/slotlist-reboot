@@ -311,10 +311,17 @@ class MissionSlot(models.Model):
 
 class MissionSlotRegistration(models.Model):
     """Represents a user's registration for a mission slot"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('rejected', 'Rejected'),
+    ]
+    
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='slot_registrations', db_column='userUid')
     slot = models.ForeignKey(MissionSlot, on_delete=models.CASCADE, related_name='registrations', db_column='slotUid')
     comment = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True, db_column='createdAt')
     updated_at = models.DateTimeField(auto_now=True, db_column='updatedAt')
 
@@ -324,7 +331,7 @@ class MissionSlotRegistration(models.Model):
         managed = True
 
     def __str__(self):
-        return f"{self.user.nickname} -> {self.slot.title}"
+        return f"{self.slot.slot_group.mission.title} - {self.user.nickname} -> {self.slot.title} ({self.status})"
 
 
 class MissionSlotTemplate(models.Model):

@@ -593,8 +593,8 @@ def get_mission_slots(request, slug: str):
     for slot_group in slot_groups:
         slots = []
         for slot in slot_group.slots.order_by('order_number'):
-            # Count pending registrations for this slot
-            registration_count = slot.registrations.count()
+            # Count pending registrations for this slot (exclude confirmed/rejected)
+            registration_count = slot.registrations.filter(status='pending').count()
             
             slot_data = {
                 'uid': str(slot.uid),
@@ -665,7 +665,8 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
                     'steamId': reg.user.steam_id,
                 },
                 'comment': reg.comment,
-                'confirmed': False,  # All existing registrations are pending (not confirmed)
+                'confirmed': reg.status == 'confirmed',
+                'status': reg.status,
                 'createdAt': reg.created_at.isoformat() if reg.created_at else None,
             }
             for reg in registrations
@@ -707,7 +708,8 @@ def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistration
                 'steamId': user.steam_id,
             },
             'comment': registration.comment,
-            'confirmed': False,  # New registrations are pending
+            'confirmed': False,
+            'status': registration.status,
             'createdAt': registration.created_at.isoformat() if registration.created_at else None,
         }
     }
@@ -715,7 +717,7 @@ def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistration
 
 @router.patch('/{slug}/slots/{slot_uid}/registrations/{registration_uid}', response={200: dict, 400: dict, 403: dict})
 def update_slot_registration(request, slug: str, slot_uid: UUID, registration_uid: UUID, data: SlotRegistrationUpdateSchema):
-    """Update/confirm a slot registration (requires permissions)"""
+    """Update/confirm or reject a slot registration (requires permissions)"""
     user_uid = request.auth.get('user', {}).get('uid')
     user = get_object_or_404(User, uid=user_uid)
     permissions = request.auth.get('permissions', [])
@@ -730,55 +732,64 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
     has_perm = has_permission(permissions, ['mission.slot.assign', 'admin.*'])
     
     if not is_creator and not has_perm:
-        return 403, {'detail': 'Insufficient permissions to confirm registration'}
+        return 403, {'detail': 'Insufficient permissions to update registration'}
     
-    # If confirmed, assign the slot to the user
+    # If confirmed, assign the slot to the user and mark registration as confirmed
     if data.confirmed:
         # Check if slot is already assigned
-        if slot.assignee:
-            return 400, {'detail': 'Slot is already assigned'}
+        if slot.assignee and str(slot.assignee.uid) != str(registration.user.uid):
+            return 400, {'detail': 'Slot is already assigned to another user'}
         
-        # Store registration info before deletion
-        registration_user = registration.user
-        registration_uid_str = str(registration.uid)
-        registration_comment = registration.comment
-        
-        slot.assignee = registration_user
+        # Assign the slot
+        slot.assignee = registration.user
         slot.save()
         
-        # Delete the registration after confirming
-        registration.delete()
+        # Update registration status to confirmed
+        registration.status = 'confirmed'
+        registration.save()
         
         return {
             'registration': {
-                'uid': registration_uid_str,
+                'uid': str(registration.uid),
                 'user': {
-                    'uid': str(registration_user.uid),
-                    'nickname': registration_user.nickname,
-                    'steamId': registration_user.steam_id,
+                    'uid': str(registration.user.uid),
+                    'nickname': registration.user.nickname,
+                    'steamId': registration.user.steam_id,
                 },
-                'comment': registration_comment,
-                'confirmed': True
+                'comment': registration.comment,
+                'confirmed': True,
+                'status': registration.status
             }
         }
-    
-    return {
-        'registration': {
-            'uid': str(registration.uid),
-            'user': {
-                'uid': str(registration.user.uid),
-                'nickname': registration.user.nickname,
-                'steamId': registration.user.steam_id,
-            },
-            'comment': registration.comment,
-            'confirmed': False
+    else:
+        # If confirmed is false, reject the registration and unassign slot if needed
+        # If the registration was confirmed and slot is assigned to this user, unassign the slot
+        if registration.status == 'confirmed' and slot.assignee and str(slot.assignee.uid) == str(registration.user.uid):
+            slot.assignee = None
+            slot.save()
+        
+        # Update registration status to rejected
+        registration.status = 'rejected'
+        registration.save()
+        
+        return {
+            'registration': {
+                'uid': str(registration.uid),
+                'user': {
+                    'uid': str(registration.user.uid),
+                    'nickname': registration.user.nickname,
+                    'steamId': registration.user.steam_id,
+                },
+                'comment': registration.comment,
+                'confirmed': False,
+                'status': registration.status
+            }
         }
-    }
 
 
 @router.delete('/{slug}/slots/{slot_uid}/registrations/{registration_uid}', response={200: dict, 403: dict})
 def delete_slot_registration(request, slug: str, slot_uid: UUID, registration_uid: UUID):
-    """Delete/unregister from a slot"""
+    """Delete/reject a slot registration - if confirmed, also unassigns the slot"""
     user_uid = request.auth.get('user', {}).get('uid')
     user = get_object_or_404(User, uid=user_uid)
     permissions = request.auth.get('permissions', [])
@@ -795,6 +806,12 @@ def delete_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
     if not is_own_registration and not is_creator and not has_perm:
         return 403, {'detail': 'Insufficient permissions to delete this registration'}
     
+    # If the registration was confirmed and slot is assigned to this user, unassign the slot
+    if registration.status == 'confirmed' and slot.assignee and str(slot.assignee.uid) == str(registration.user.uid):
+        slot.assignee = None
+        slot.save()
+    
+    # Delete the registration
     registration.delete()
     
     return {'success': True}
