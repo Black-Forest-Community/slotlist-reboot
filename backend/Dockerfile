@@ -28,5 +28,5 @@ RUN python manage.py collectstatic --noinput || true
 # Expose port
 EXPOSE 8022
 
-# Start server (no migrations needed - models are unmanaged)
-CMD ["gunicorn", "slotlist_backend.wsgi:application", "--bind", "0.0.0.0:8022"]
+# Start server with migrations
+CMD python manage.py migrate --noinput && gunicorn slotlist_backend.wsgi:application --bind 0.0.0.0:8022
