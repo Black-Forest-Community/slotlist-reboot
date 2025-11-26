@@ -295,6 +295,7 @@
   "mission.registration.registered": "Augm\u00f6dt",
   "mission.repository.kind": "Type",
   "mission.repository.kind.arma3sync": "ArmA3Sync",
+  "mission.repository.kind.armalauncher": "ArmaLauncher",
   "mission.repository.kind.description": "Defined the type of mod repository. Clicking an <code>ArmA3Sync<\/code> repository link automatically copies it to clipboard",
   "mission.repository.kind.other": "Other",
   "mission.repository.list": "Mod repositories",

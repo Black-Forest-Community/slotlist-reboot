@@ -295,6 +295,7 @@
   "mission.registration.registered": "Angemeldet",
   "mission.repository.kind": "Typ",
   "mission.repository.kind.arma3sync": "ArmA3Sync",
+  "mission.repository.kind.armalauncher": "ArmaLauncher",
   "mission.repository.kind.description": "W\u00e4hle den Typ des Mod-Repositories aus. Beim Klick auf einen <code>ArmA3Sync<\/code>-Repository Link wird dieser automatisch in die Zwischenablage kopiert",
   "mission.repository.kind.other": "Anderes",
   "mission.repository.list": "Mod-Repositories",

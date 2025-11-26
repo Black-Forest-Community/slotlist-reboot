@@ -483,6 +483,7 @@ export default {
       },
       missionRepositoryCreateKindOptions: [
         { text: this.$t('mission.repository.kind.arma3sync'), value: 'arma3sync' },
+        { text: this.$t('mission.repository.kind.armalauncher'), value: 'armalauncher' },
         { text: this.$t('mission.repository.kind.other'), value: 'other' }
       ],
       missionSlotlistFilter: [],
