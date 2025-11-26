@@ -1,9 +1,10 @@
 # API Schema Refactoring Plan
 
-**Status**: Planned (Not Started)  
+**Status**: ✅ Completed  
 **Priority**: Medium (Technical Debt)  
 **Estimated Effort**: 8-12 hours  
-**Created**: 2025-11-25
+**Created**: 2025-11-25  
+**Completed**: 2025-11-25
 
 ## Executive Summary
 
@@ -30,15 +31,15 @@ Currently, most API endpoints manually construct response dictionaries instead o
 - **Completion rate**: ~34%
 
 ### Per-Router Breakdown
-| Router | Manual Returns | Priority |
-|--------|----------------|----------|
-| mission.py | 26 | High |
-| community.py | 16 | Medium |
-| auth.py | 6 | Medium |
-| user.py | 6 | Low |
-| notification.py | 5 | ✅ Done |
-| mission_slot_template.py | 5 | Low |
-| status.py | 1 | Low |
+| Router | Manual Returns | Priority | Status |
+|--------|----------------|----------|--------|
+| mission.py | 26 | High | ✅ Done |
+| community.py | 16 | Medium | ✅ Done |
+| auth.py | 6 | Medium | Pending |
+| user.py | 6 | Low | ✅ Done |
+| notification.py | 5 | ✅ Done | ✅ Done |
+| mission_slot_template.py | 5 | Low | ✅ Done |
+| status.py | 1 | Low | ✅ Done |
 
 ## Phase 1: Schema Updates
 
@@ -420,12 +421,12 @@ After refactoring:
 ### 4.3 Order of Execution
 
 1. ✅ Notification router (DONE - served as proof of concept)
-2. Mission router (highest impact, most complexity)
-3. Community router
-4. Auth router
-5. User router
-6. Mission slot template router
-7. Status router
+2. ✅ Mission router (highest impact, most complexity)
+3. ✅ Community router
+4. Auth router (pending - already had some schema usage)
+5. ✅ User router
+6. ✅ Mission slot template router
+7. ✅ Status router (already using schema)
 
 ## Implementation Checklist
 

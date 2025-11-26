@@ -10,24 +10,26 @@ class CommunitySchema(Schema):
     tag: str
     slug: str
     website: Optional[str] = None
-    logo_url: Optional[str] = Field(None, alias='logoUrl')
-    game_servers: Optional[List[Any]] = Field(None, alias='gameServers')
-    voice_comms: Optional[List[Any]] = Field(None, alias='voiceComms')
+    logo_url: Optional[str] = Field(None, alias='logoUrl', serialization_alias='logoUrl')
+    game_servers: Optional[List[Any]] = Field(None, alias='gameServers', serialization_alias='gameServers')
+    voice_comms: Optional[List[Any]] = Field(None, alias='voiceComms', serialization_alias='voiceComms')
     repositories: Optional[List[Any]] = None
     
     class Config:
         populate_by_name = True
+        from_attributes = True
 
 
 class UserSchema(Schema):
     uid: UUID
     nickname: str
-    steam_id: Optional[str] = Field(None, alias='steamId')
+    steam_id: Optional[str] = Field(None, alias='steamId', serialization_alias='steamId')
     community: Optional[CommunitySchema] = None
     active: Optional[bool] = None
     
     class Config:
         populate_by_name = True
+        from_attributes = True
 
 
 class UserDetailSchema(UserSchema):
@@ -37,49 +39,86 @@ class UserDetailSchema(UserSchema):
 class PermissionSchema(Schema):
     uid: UUID
     permission: str
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
 
 
 class MissionSlotGroupSchema(Schema):
     uid: UUID
     title: str
-    description: str
-    order_number: int = Field(alias='orderNumber')
+    description: str = ''
+    order_number: int = Field(alias='orderNumber', serialization_alias='orderNumber')
     
     class Config:
         populate_by_name = True
+        from_attributes = True
 
 
 class MissionSlotSchema(Schema):
     uid: UUID
-    slot_group_uid: UUID = Field(alias='slotGroupUid')
+    slot_group_uid: UUID = Field(alias='slotGroupUid', serialization_alias='slotGroupUid')
     title: str
-    description: str
-    detailed_description: str = Field(alias='detailedDescription')
-    order_number: int = Field(alias='orderNumber')
-    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs')
-    external_assignee: Optional[str] = Field(None, alias='externalAssignee')
-    registration_count: int = Field(0, alias='registrationCount')
+    description: str = ''
+    detailed_description: str = Field('', alias='detailedDescription', serialization_alias='detailedDescription')
+    order_number: int = Field(alias='orderNumber', serialization_alias='orderNumber')
+    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs', serialization_alias='requiredDLCs')
+    external_assignee: Optional[str] = Field(None, alias='externalAssignee', serialization_alias='externalAssignee')
+    registration_count: int = Field(0, alias='registrationCount', serialization_alias='registrationCount')
     assignee: Optional[UserSchema] = None
-    restricted_community: Optional[CommunitySchema] = Field(None, alias='restrictedCommunity')
-    blocked: bool
-    reserve: bool
-    auto_assignable: bool = Field(alias='autoAssignable')
+    restricted_community: Optional[CommunitySchema] = Field(None, alias='restrictedCommunity', serialization_alias='restrictedCommunity')
+    blocked: bool = False
+    reserve: bool = False
+    auto_assignable: bool = Field(True, alias='autoAssignable', serialization_alias='autoAssignable')
     
     class Config:
         populate_by_name = True
+        from_attributes = True
+    
+    @staticmethod
+    def resolve_slot_group_uid(obj):
+        """Resolve slot_group_uid from the slot_group relation"""
+        if hasattr(obj, 'slot_group') and obj.slot_group:
+            return obj.slot_group.uid
+        return getattr(obj, 'slot_group_uid', None)
+    
+    @staticmethod
+    def resolve_registration_count(obj):
+        """Resolve registration_count from registrations relation"""
+        # Check if it's already set as an attribute (e.g., from annotation)
+        if hasattr(obj, '_registration_count'):
+            return obj._registration_count
+        # Otherwise count pending registrations
+        if hasattr(obj, 'registrations'):
+            return obj.registrations.filter(status='pending').count()
+        return 0
 
 
 class MissionSlotRegistrationSchema(Schema):
     uid: UUID
-    slot_uid: UUID = Field(alias='slotUid')
+    slot_uid: UUID = Field(alias='slotUid', serialization_alias='slotUid')
     user: UserSchema
     comment: Optional[str] = None
     status: str
-    confirmed: bool
-    created_at: datetime = Field(alias='createdAt')
+    confirmed: bool = False
+    created_at: Optional[datetime] = Field(None, alias='createdAt', serialization_alias='createdAt')
     
     class Config:
         populate_by_name = True
+        from_attributes = True
+    
+    @staticmethod
+    def resolve_slot_uid(obj):
+        """Resolve slot_uid from the slot relation"""
+        if hasattr(obj, 'slot') and obj.slot:
+            return obj.slot.uid
+        return getattr(obj, 'slot_uid', None)
+    
+    @staticmethod
+    def resolve_confirmed(obj):
+        """Resolve confirmed from status"""
+        return getattr(obj, 'status', '') == 'confirmed'
 
 
 class MissionSchema(Schema):
@@ -87,29 +126,51 @@ class MissionSchema(Schema):
     slug: str
     title: str
     description: str
-    detailed_description: str = Field('', alias='detailedDescription')
-    collapsed_description: Optional[str] = Field(None, alias='collapsedDescription')
-    briefing_time: Optional[datetime] = Field(None, alias='briefingTime')
-    slotting_time: Optional[datetime] = Field(None, alias='slottingTime')
-    start_time: Optional[datetime] = Field(None, alias='startTime')
-    end_time: Optional[datetime] = Field(None, alias='endTime')
+    detailed_description: str = Field('', alias='detailedDescription', serialization_alias='detailedDescription')
+    collapsed_description: Optional[str] = Field(None, alias='collapsedDescription', serialization_alias='collapsedDescription')
+    briefing_time: Optional[datetime] = Field(None, alias='briefingTime', serialization_alias='briefingTime')
+    slotting_time: Optional[datetime] = Field(None, alias='slottingTime', serialization_alias='slottingTime')
+    start_time: Optional[datetime] = Field(None, alias='startTime', serialization_alias='startTime')
+    end_time: Optional[datetime] = Field(None, alias='endTime', serialization_alias='endTime')
     visibility: str
-    tech_teleport: bool = Field(alias='techTeleport')
-    tech_respawn: bool = Field(alias='techRespawn')
-    tech_support: Optional[str] = Field(None, alias='techSupport')
-    details_map: Optional[str] = Field(None, alias='detailsMap')
-    details_game_mode: Optional[str] = Field(None, alias='detailsGameMode')
-    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs')
-    game_server: Optional[Any] = Field(None, alias='gameServer')
-    voice_comms: Optional[Any] = Field(None, alias='voiceComms')
+    tech_teleport: bool = Field(False, alias='techTeleport', serialization_alias='techTeleport')
+    tech_respawn: bool = Field(False, alias='techRespawn', serialization_alias='techRespawn')
+    tech_support: Optional[str] = Field(None, alias='techSupport', serialization_alias='techSupport')
+    details_map: Optional[str] = Field(None, alias='detailsMap', serialization_alias='detailsMap')
+    details_game_mode: Optional[str] = Field(None, alias='detailsGameMode', serialization_alias='detailsGameMode')
+    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs', serialization_alias='requiredDLCs')
+    game_server: Optional[Any] = Field(None, alias='gameServer', serialization_alias='gameServer')
+    voice_comms: Optional[Any] = Field(None, alias='voiceComms', serialization_alias='voiceComms')
     repositories: Optional[List[Any]] = None
-    rules_of_engagement: str = Field('', alias='rulesOfEngagement')
-    banner_image_url: Optional[str] = Field(None, alias='bannerImageUrl')
+    rules_of_engagement: str = Field('', alias='rulesOfEngagement', serialization_alias='rulesOfEngagement')
+    banner_image_url: Optional[str] = Field(None, alias='bannerImageUrl', serialization_alias='bannerImageUrl')
     creator: UserSchema
     community: Optional[CommunitySchema] = None
     
     class Config:
         populate_by_name = True
+        from_attributes = True
+    
+    @staticmethod
+    def resolve_tech_teleport(obj):
+        """Compute tech_teleport from tech_support string"""
+        tech_support = getattr(obj, 'tech_support', None)
+        if tech_support and isinstance(tech_support, str):
+            return 'teleport' in tech_support.lower()
+        return False
+    
+    @staticmethod
+    def resolve_tech_respawn(obj):
+        """Compute tech_respawn from tech_support string"""
+        tech_support = getattr(obj, 'tech_support', None)
+        if tech_support and isinstance(tech_support, str):
+            return 'respawn' in tech_support.lower()
+        return False
+    
+    @staticmethod
+    def resolve_rules_of_engagement(obj):
+        """Map rules field to rules_of_engagement"""
+        return getattr(obj, 'rules', '') or ''
 
 
 # Mission Response Schemas
@@ -117,26 +178,42 @@ class MissionDetailResponseSchema(Schema):
     mission: MissionSchema
 
 
+class MissionCreateResponseSchema(Schema):
+    """Response schema for mission creation (includes token)"""
+    token: str
+    mission: MissionSchema
+
+
 class MissionListItemSchema(Schema):
-    """Simplified mission schema for list view"""
+    """Simplified mission schema for list view with slot counts"""
     uid: UUID
     slug: str
     title: str
     description: str
-    briefing_time: Optional[datetime] = Field(None, alias='briefingTime')
-    slotting_time: Optional[datetime] = Field(None, alias='slottingTime')
-    start_time: Optional[datetime] = Field(None, alias='startTime')
-    end_time: Optional[datetime] = Field(None, alias='endTime')
+    briefing_time: Optional[datetime] = Field(None, alias='briefingTime', serialization_alias='briefingTime')
+    slotting_time: Optional[datetime] = Field(None, alias='slottingTime', serialization_alias='slottingTime')
+    start_time: Optional[datetime] = Field(None, alias='startTime', serialization_alias='startTime')
+    end_time: Optional[datetime] = Field(None, alias='endTime', serialization_alias='endTime')
     visibility: str
-    details_map: Optional[str] = Field(None, alias='detailsMap')
-    details_game_mode: Optional[str] = Field(None, alias='detailsGameMode')
-    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs')
-    banner_image_url: Optional[str] = Field(None, alias='bannerImageUrl')
+    details_map: Optional[str] = Field(None, alias='detailsMap', serialization_alias='detailsMap')
+    details_game_mode: Optional[str] = Field(None, alias='detailsGameMode', serialization_alias='detailsGameMode')
+    required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs', serialization_alias='requiredDLCs')
+    banner_image_url: Optional[str] = Field(None, alias='bannerImageUrl', serialization_alias='bannerImageUrl')
     creator: UserSchema
     community: Optional[CommunitySchema] = None
+    slot_counts: Optional[dict] = Field(None, alias='slotCounts', serialization_alias='slotCounts')
+    is_assigned_to_any_slot: Optional[bool] = Field(False, alias='isAssignedToAnySlot', serialization_alias='isAssignedToAnySlot')
+    is_registered_for_any_slot: Optional[bool] = Field(False, alias='isRegisteredForAnySlot', serialization_alias='isRegisteredForAnySlot')
     
     class Config:
         populate_by_name = True
+        from_attributes = True
+
+
+class MissionListResponseSchema(Schema):
+    """Response schema for mission list"""
+    missions: List[MissionListItemSchema]
+    total: int
 
 
 class MissionSlotGroupWithSlotsSchema(MissionSlotGroupSchema):
@@ -144,11 +221,11 @@ class MissionSlotGroupWithSlotsSchema(MissionSlotGroupSchema):
 
 
 class MissionSlotsResponseSchema(Schema):
-    slot_groups: List[MissionSlotGroupWithSlotsSchema] = Field(alias='slotGroups')
+    slot_groups: List[MissionSlotGroupWithSlotsSchema] = Field(alias='slotGroups', serialization_alias='slotGroups')
 
 
 class MissionSlotGroupDetailResponseSchema(Schema):
-    slot_group: MissionSlotGroupWithSlotsSchema = Field(alias='slotGroup')
+    slot_group: MissionSlotGroupWithSlotsSchema = Field(alias='slotGroup', serialization_alias='slotGroup')
 
 
 class MissionSlotListResponseSchema(Schema):
@@ -175,7 +252,22 @@ class MissionSlotTemplateSchema(Schema):
     title: str
     creator: UserSchema
     community: Optional[CommunitySchema] = None
-    slot_groups: List[Any]
+    slot_groups: List[Any] = Field(default_factory=list, alias='slotGroups', serialization_alias='slotGroups')
+    created_at: Optional[datetime] = Field(None, alias='createdAt', serialization_alias='createdAt')
+    updated_at: Optional[datetime] = Field(None, alias='updatedAt', serialization_alias='updatedAt')
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
+class MissionSlotTemplateListResponseSchema(Schema):
+    slot_templates: List[MissionSlotTemplateSchema] = Field(alias='slotTemplates', serialization_alias='slotTemplates')
+    total: int
+
+
+class MissionSlotTemplateDetailResponseSchema(Schema):
+    slot_template: MissionSlotTemplateSchema = Field(alias='slotTemplate', serialization_alias='slotTemplate')
 
 
 class MissionAccessSchema(Schema):
@@ -183,6 +275,10 @@ class MissionAccessSchema(Schema):
     mission: MissionSchema
     user: Optional[UserSchema] = None
     community: Optional[CommunitySchema] = None
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
 
 
 class CommunityApplicationSchema(Schema):
@@ -190,19 +286,97 @@ class CommunityApplicationSchema(Schema):
     user: UserSchema
     community: CommunitySchema
     status: str
+    created_at: Optional[datetime] = Field(None, alias='createdAt', serialization_alias='createdAt')
+    updated_at: Optional[datetime] = Field(None, alias='updatedAt', serialization_alias='updatedAt')
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+
+class CommunityApplicationResponseSchema(Schema):
+    application: CommunityApplicationSchema
+
+
+class CommunityApplicationListResponseSchema(Schema):
+    applications: List[CommunityApplicationSchema]
+    total: int
+
+
+class CommunityWithMembersSchema(CommunitySchema):
+    """Extended community schema with members and leaders"""
+    members: Optional[List[UserSchema]] = []
+    leaders: Optional[List[UserSchema]] = []
+
+
+class CommunityDetailResponseSchema(Schema):
+    community: CommunityWithMembersSchema
+
+
+class CommunityListResponseSchema(Schema):
+    communities: List[CommunitySchema]
+    total: int
+
+
+class CommunityMissionsResponseSchema(Schema):
+    missions: List[MissionListItemSchema]
+    total: int
+
+
+class PermissionWithUserSchema(PermissionSchema):
+    """Permission schema with user details"""
+    user: Optional[UserSchema] = None
+
+
+class PermissionResponseSchema(Schema):
+    permission: PermissionWithUserSchema
+
+
+class PermissionListResponseSchema(Schema):
+    permissions: List[PermissionWithUserSchema]
+    total: int
+
+
+class UserWithDetailsSchema(UserSchema):
+    """Extended user schema with missions and permissions"""
+    missions: Optional[List[MissionListItemSchema]] = []
+    permissions: Optional[List[PermissionSchema]] = []
+
+
+class UserDetailResponseSchema(Schema):
+    user: UserWithDetailsSchema
+
+
+class UserListResponseSchema(Schema):
+    users: List[UserSchema]
+    limit: int
+    offset: int
+    count: int
+    total: int
+    more_available: bool = Field(alias='moreAvailable', serialization_alias='moreAvailable')
+
+
+class UserMissionsResponseSchema(Schema):
+    missions: List[MissionListItemSchema]
+    limit: int
+    offset: int
+    count: int
+    total: int
+    more_available: bool = Field(alias='moreAvailable', serialization_alias='moreAvailable')
 
 
 class NotificationSchema(Schema):
     uid: UUID
-    notification_type: str = Field(..., alias='notificationType')
+    notification_type: str = Field(..., alias='notificationType', serialization_alias='notificationType')
     title: Optional[str] = None
     message: str
-    additional_data: Optional[Any] = Field(None, alias='additionalData')
+    additional_data: Optional[Any] = Field(None, alias='additionalData', serialization_alias='additionalData')
     read: bool
-    created_at: datetime = Field(..., alias='createdAt')
+    created_at: datetime = Field(..., alias='createdAt', serialization_alias='createdAt')
     
     class Config:
         populate_by_name = True
+        from_attributes = True
 
 
 class NotificationListResponseSchema(Schema):
