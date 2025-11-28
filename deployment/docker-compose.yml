@@ -1,0 +1,92 @@
+services:
+  # Caddy Reverse Proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: slotlist-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL:-admin@slotlist.online}
+    networks:
+      - slotlist-network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: slotlist-db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-slotlist}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - slotlist-network
+
+  # Django Backend API
+  backend:
+    image: ghcr.io/black-forest-community/slotlist-reboot/backend:main
+    container_name: slotlist-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8022:8022"
+    volumes:
+      - media_files:/app/media
+      - static_files:/app/static
+    environment:
+      - DEBUG=False
+      - DB_DATABASE=${DB_DATABASE:-slotlist}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - CONFIG_JWT_SECRET=${CONFIG_JWT_SECRET}
+      - CONFIG_JWT_ISSUER=https://slotlist.online
+      - CONFIG_JWT_AUDIENCE=https://slotlist.online
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=api.slotlist.online,slotlist.online
+      - CORS_ALLOWED_ORIGINS=https://slotlist.online
+      - MEDIA_ROOT=/app/media
+      - STATIC_ROOT=/app/static
+    env_file:
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - slotlist-network
+
+  # Vue.js Frontend (Production build)
+  frontend:
+    image: ghcr.io/black-forest-community/slotlist-reboot/frontend:main
+    container_name: slotlist-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:80"
+    depends_on:
+      - backend
+    networks:
+      - slotlist-network
+networks:
+  slotlist-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  media_files:
+  static_files:
+  caddy_data:
+  caddy_config:

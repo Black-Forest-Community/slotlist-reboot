@@ -1,0 +1,24 @@
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+
+# Frontend - slotlist.online
+slotlist.online {
+	reverse_proxy frontend:80
+	encode gzip
+	
+	log {
+		output file /var/log/caddy/slotlist.log
+	}
+}
+
+# Backend API - api.slotlist.online
+api.slotlist.online {
+	reverse_proxy backend:8022
+	encode gzip
+	
+	log {
+		output file /var/log/caddy/api.log
+	}
+}
