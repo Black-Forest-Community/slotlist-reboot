@@ -212,9 +212,6 @@ DEFAULT_ADMIN_UID = os.getenv('DEFAULT_ADMIN_UID', None)
 DEFAULT_ADMIN_STEAMID = os.getenv('DEFAULT_ADMIN_STEAMID', '')
 DEFAULT_ADMIN_NICKNAME = os.getenv('DEFAULT_ADMIN_NICKNAME', '')
 
-# Sentry DSN
-SENTRY_DSN = os.getenv('SENTRY_DSN', '')
-
 # Security Headers
 SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
 SECURE_HSTS_SECONDS = 31536000
