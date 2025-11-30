@@ -25,13 +25,21 @@ class Command(BaseCommand):
             action='store_true',
             help='Preview what would be imported without saving',
         )
+        parser.add_argument(
+            '--update',
+            action='store_true',
+            help='Update existing mission with new data from API (re-imports media content in body fields)',
+        )
 
     def handle(self, *args, **options):
         slug = options['slug']
         creator_uid = options.get('creator_uid')
         dry_run = options['dry_run']
+        update_existing = options['update']
 
         self.stdout.write(f'Importing mission: {slug}')
+        if update_existing:
+            self.stdout.write(self.style.WARNING('Update mode: Existing mission will be updated with new data'))
         
         # Fetch mission data
         try:
@@ -49,10 +57,11 @@ class Command(BaseCommand):
         # Import the mission
         try:
             self.stdout.write('\nImporting mission...')
-            mission = import_mission(slug, creator_uid, mission_data, slots_data)
+            mission = import_mission(slug, creator_uid, mission_data, slots_data, update_existing=update_existing)
             
+            action = 'updated' if update_existing else 'imported'
             self.stdout.write(self.style.SUCCESS(
-                f'Successfully imported mission: {mission.title} ({mission.slug})'
+                f'Successfully {action} mission: {mission.title} ({mission.slug})'
             ))
             self.stdout.write(f'Mission UID: {mission.uid}')
         except MissionAlreadyExistsError as e:
