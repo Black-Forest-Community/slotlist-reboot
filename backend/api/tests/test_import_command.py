@@ -19,15 +19,16 @@ class ImportMissionCommandTest(TestCase):
             steam_id='test_steam_id_123'
         )
 
-    def _get_mock_mission_response(self):
+    def _get_mock_mission_response(self, detailed_description='Detailed test description',
+                                   banner_image_url=None, title='Test Mission'):
         """Returns mock mission API response"""
         return {
             'mission': {
                 'uid': 'test-mission-uid-123',
                 'slug': 'test-mission',
-                'title': 'Test Mission',
+                'title': title,
                 'description': 'Test description',
-                'detailedDescription': 'Detailed test description',
+                'detailedDescription': detailed_description,
                 'collapsedDescription': None,
                 'briefingTime': '2025-10-28T18:00:00.000Z',
                 'slottingTime': '2025-10-28T18:00:00.000Z',
@@ -37,7 +38,7 @@ class ImportMissionCommandTest(TestCase):
                 'techSupport': 'Test tech support',
                 'rules': 'Test rules',
                 'requiredDLCs': [],
-                'bannerImageUrl': None,
+                'bannerImageUrl': banner_image_url,
                 'gameServer': {
                     'hostname': 'test.server.com',
                     'port': 2302,
@@ -129,7 +130,7 @@ class ImportMissionCommandTest(TestCase):
             ]
         }
 
-    @patch('api.management.commands.import_mission.requests.get')
+    @patch('api.import_utils.requests.get')
     def test_dry_run(self, mock_get):
         """Test dry run doesn't save anything"""
         # Setup mocks
@@ -158,7 +159,7 @@ class ImportMissionCommandTest(TestCase):
         self.assertIn('Test Mission', output)
         self.assertIn('Team Leader', output)
 
-    @patch('api.management.commands.import_mission.requests.get')
+    @patch('api.import_utils.requests.get')
     def test_import_mission_success(self, mock_get):
         """Test successful mission import"""
         # Setup mocks
@@ -199,7 +200,7 @@ class ImportMissionCommandTest(TestCase):
         output = out.getvalue()
         self.assertIn('Successfully imported', output)
 
-    @patch('api.management.commands.import_mission.requests.get')
+    @patch('api.import_utils.requests.get')
     def test_mission_already_exists(self, mock_get):
         """Test error when mission already exists"""
         # Create existing mission
@@ -235,7 +236,7 @@ class ImportMissionCommandTest(TestCase):
         
         self.assertIn('already exists', str(context.exception))
 
-    @patch('api.management.commands.import_mission.requests.get')
+    @patch('api.import_utils.requests.get')
     def test_network_error(self, mock_get):
         """Test error handling for network failures"""
         # Setup mock to raise exception
@@ -246,3 +247,106 @@ class ImportMissionCommandTest(TestCase):
             call_command('import_mission', 'test-mission')
         
         self.assertIn('Failed to fetch', str(context.exception))
+
+    @patch('api.import_utils.requests.get')
+    def test_update_existing_mission(self, mock_get):
+        """Test updating an existing mission with --update flag"""
+        # Create existing mission with old data
+        community = Community.objects.create(
+            uid='test-community-uid',
+            name='Test Community',
+            tag='TC',
+            slug='test-community'
+        )
+        existing_mission = Mission.objects.create(
+            slug='test-mission',
+            title='Old Title',
+            description='Old description',
+            short_description='Old description',
+            detailed_description='Old detailed description',
+            creator=self.creator,
+            community=community
+        )
+        
+        # Setup mocks with updated data including media content
+        updated_detailed = '<p>Updated description with <img src="https://slotlist-info.storage.googleapis.com/images/test.png"></p>'
+        mission_response = Mock()
+        mission_response.json.return_value = self._get_mock_mission_response(
+            detailed_description=updated_detailed,
+            banner_image_url='https://slotlist-info.storage.googleapis.com/banners/test.jpg',
+            title='Updated Test Mission'
+        )
+        mission_response.raise_for_status = Mock()
+        
+        slots_response = Mock()
+        slots_response.json.return_value = self._get_mock_slots_response()
+        slots_response.raise_for_status = Mock()
+        
+        mock_get.side_effect = [mission_response, slots_response]
+        
+        # Run command with --update flag
+        out = StringIO()
+        call_command('import_mission', 'test-mission', '--update', stdout=out)
+        
+        # Verify mission was updated (not duplicated)
+        self.assertEqual(Mission.objects.count(), 1)
+        mission = Mission.objects.first()
+        self.assertEqual(mission.slug, 'test-mission')
+        self.assertEqual(mission.title, 'Updated Test Mission')
+        self.assertEqual(mission.detailed_description, updated_detailed)
+        self.assertEqual(mission.banner_image_url, 'https://slotlist-info.storage.googleapis.com/banners/test.jpg')
+        
+        # Verify output
+        output = out.getvalue()
+        self.assertIn('Successfully updated', output)
+
+    @patch('api.import_utils.requests.get')
+    def test_update_imports_media_content(self, mock_get):
+        """Test that update properly imports media content in body fields"""
+        # Create existing mission without media
+        community = Community.objects.create(
+            uid='test-community-uid',
+            name='Test Community',
+            tag='TC',
+            slug='test-community'
+        )
+        Mission.objects.create(
+            slug='test-mission',
+            title='Test Mission',
+            description='Test',
+            short_description='Test',
+            detailed_description='No images here',
+            creator=self.creator,
+            community=community
+        )
+        
+        # Setup mocks with media content in body fields
+        detailed_with_images = '''
+        <h2>Mission Briefing</h2>
+        <p>Here is the situation map:</p>
+        <img src="https://slotlist-info.storage.googleapis.com/images/missions/situation-map.png">
+        <p>And here is the weather forecast:</p>
+        <img src="https://slotlist-info.storage.googleapis.com/images/missions/weather.jpg">
+        '''
+        
+        mission_response = Mock()
+        mission_response.json.return_value = self._get_mock_mission_response(
+            detailed_description=detailed_with_images
+        )
+        mission_response.raise_for_status = Mock()
+        
+        slots_response = Mock()
+        slots_response.json.return_value = self._get_mock_slots_response()
+        slots_response.raise_for_status = Mock()
+        
+        mock_get.side_effect = [mission_response, slots_response]
+        
+        # Run command with --update flag
+        out = StringIO()
+        call_command('import_mission', 'test-mission', '--update', stdout=out)
+        
+        # Verify mission was updated with media content
+        mission = Mission.objects.first()
+        self.assertIn('slotlist-info.storage.googleapis.com', mission.detailed_description)
+        self.assertIn('situation-map.png', mission.detailed_description)
+        self.assertIn('weather.jpg', mission.detailed_description)
