@@ -8,7 +8,7 @@ import requests
 from typing import Dict, Any, Optional, Tuple
 from django.db import transaction
 from api.models import (
-    Mission, MissionSlotGroup, MissionSlot,
+    Mission, MissionSlotGroup, MissionSlot, MissionSlotRegistration,
     Community, User
 )
 
@@ -236,8 +236,6 @@ def _update_mission(
     Returns:
         Updated Mission instance
     """
-    from api.models import MissionSlotRegistration
-    
     with transaction.atomic():
         # Get or create community
         community = get_or_create_community(mission_data['community'])
@@ -281,8 +279,6 @@ def _update_slots(mission: Mission, slot_groups_data: list) -> None:
         mission: Mission instance to update slots for
         slot_groups_data: List of slot group data from API
     """
-    from api.models import MissionSlotRegistration
-    
     # Build lookup of existing slot groups and slots by UID
     existing_groups = {str(g.uid): g for g in mission.slot_groups.all()}
     existing_slots = {}
@@ -433,7 +429,6 @@ def _import_slots(mission: Mission, slot_groups_data: list) -> None:
             
             # Create registration if there's an assignee
             if assignee and slot_data.get('registrationUid'):
-                from api.models import MissionSlotRegistration
                 MissionSlotRegistration.objects.create(
                     uid=slot_data['registrationUid'],
                     user=assignee,

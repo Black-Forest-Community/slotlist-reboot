@@ -71,7 +71,6 @@ class Command(BaseCommand):
 
         # Import each mission
         imported_count = 0
-        updated_count = 0
         skipped_count = 0
         failed_count = 0
 
@@ -83,13 +82,6 @@ class Command(BaseCommand):
             
             try:
                 mission = import_mission(slug, creator_uid, update_existing=update_existing)
-                # Check if this was an update or a new import
-                # We can tell by checking if the import_mission handled an existing mission
-                from api.models import Mission
-                was_existing = Mission.objects.filter(slug=slug).exists()
-                # Since import_mission returns the mission, we need another way to know if it was updated
-                # We'll track this differently - if update_existing is True and no error was raised,
-                # we assume it might have been an update
                 self.stdout.write(self.style.SUCCESS(f'  ✓ Imported mission UID: {mission.uid}'))
                 imported_count += 1
             except MissionAlreadyExistsError:
