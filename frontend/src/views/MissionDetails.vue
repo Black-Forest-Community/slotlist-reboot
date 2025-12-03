@@ -660,7 +660,7 @@ export default {
       return this.$store.getters.missionSlotGroups
     },
     optionalRules() {
-      return this.missionDetails.rules || `<div class='text-muted font-italic'>${this.$t('misc.notSpecified')}</div>`
+      return this.missionDetails.rulesOfEngagement || `<div class='text-muted font-italic'>${this.$t('misc.notSpecified')}</div>`
     },
     optionalTechSupport() {
       return this.missionDetails.techSupport || `<div class='text-muted font-italic'>${this.$t('misc.notProvided')}</div>`

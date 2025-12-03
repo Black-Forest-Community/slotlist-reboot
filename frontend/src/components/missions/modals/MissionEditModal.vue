@@ -66,7 +66,7 @@
           <div class="row">
             <div class="col">
               <b-form-fieldset :label="$t('mission.rules.optional')" state="success" :description="$t('mission.rules.description')">
-                <quill-editor v-model="missionEditData.rules" ref="missionEditRulesEditor" :options="missionEditQuillEditorOptions"></quill-editor>
+                <quill-editor v-model="missionEditData.rulesOfEngagement" ref="missionEditRulesEditor" :options="missionEditQuillEditorOptions"></quill-editor>
                 <editor-explanation></editor-explanation>
               </b-form-fieldset>
             </div>
@@ -250,7 +250,7 @@ export default {
           name: null,
           password: null
         },
-        rules: null,
+        rulesOfEngagement: null,
         description: null,
         slotsAutoAssignable: false,
         slottingTime: null,
@@ -595,8 +595,8 @@ export default {
       if (_.isString(this.missionEditData.collapsedDescription) && _.isEmpty(this.missionEditData.collapsedDescription)) {
         this.missionEditData.collapsedDescription = null
       }
-      if (_.isString(this.missionEditData.rules) && _.isEmpty(this.missionEditData.rules)) {
-        this.missionEditData.rules = null
+      if (_.isString(this.missionEditData.rulesOfEngagement) && _.isEmpty(this.missionEditData.rulesOfEngagement)) {
+        this.missionEditData.rulesOfEngagement = null
       }
       if (_.isString(this.missionEditData.techSupport) && _.isEmpty(this.missionEditData.techSupport)) {
         this.missionEditData.techSupport = null
@@ -691,7 +691,7 @@ export default {
         collapsedDescription: this.missionDetails.collapsedDescription,
         detailedDescription: this.missionDetails.detailedDescription,
         endTime: moment(this.missionDetails.endTime).format('Y-MM-DD HH:mm'),
-        rules: this.missionDetails.rules,
+        rulesOfEngagement: this.missionDetails.rulesOfEngagement,
         description: this.missionDetails.description,
         gameServer: {
           hostname: _.isNil(this.missionDetails.gameServer) ? null : this.missionDetails.gameServer.hostname,

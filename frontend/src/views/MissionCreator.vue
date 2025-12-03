@@ -715,7 +715,7 @@ export default {
         endTime: moment(this.missionCreateEndTime).utc().format(),
         briefingTime: moment(this.missionCreateBriefingTime).utc().format(),
         techSupport: this.missionCreateTechSupport,
-        rules: this.missionCreateRules,
+        rulesOfEngagement: this.missionCreateRules,
         gameServer,
         voiceComms,
         addToCommunity: this.missionCreateAddToCommunity,
@@ -730,8 +730,8 @@ export default {
       if (_.isEmpty(missionDetails.techSupport)) {
         missionDetails.techSupport = null
       }
-      if (_.isEmpty(missionDetails.rules)) {
-        missionDetails.rules = null
+      if (_.isEmpty(missionDetails.rulesOfEngagement)) {
+        missionDetails.rulesOfEngagement = null
       }
 
       this.$store.dispatch('createMission', missionDetails)
