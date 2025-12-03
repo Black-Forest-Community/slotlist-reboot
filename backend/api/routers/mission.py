@@ -582,11 +582,21 @@ def get_mission_slots(request, slug: str):
     """Get all slots for a mission organized by slot groups"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
     
+    # Get current user UID if authenticated (manually check Authorization header)
+    current_user_uid = None
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        token = auth_header.split(' ')[1]
+        from api.auth import decode_jwt
+        payload = decode_jwt(token)
+        if payload:
+            current_user_uid = payload.get('user', {}).get('uid')
+    
     # Get all slot groups with their slots for this mission
     slot_groups = MissionSlotGroup.objects.filter(mission=mission).prefetch_related(
         'slots__assignee',
         'slots__restricted_community',
-        'slots__registrations'
+        'slots__registrations__user'
     ).order_by('order_number')
     
     result = []
@@ -595,6 +605,13 @@ def get_mission_slots(request, slug: str):
         for slot in slot_group.slots.order_by('order_number'):
             # Count pending registrations for this slot (exclude confirmed/rejected)
             registration_count = slot.registrations.filter(status='pending').count()
+            
+            # Check if current user has a registration for this slot
+            user_registration_uid = None
+            if current_user_uid:
+                user_registration = slot.registrations.filter(user__uid=current_user_uid).first()
+                if user_registration:
+                    user_registration_uid = str(user_registration.uid)
             
             slot_data = {
                 'uid': str(slot.uid),
@@ -606,6 +623,7 @@ def get_mission_slots(request, slug: str):
                 'requiredDLCs': slot.required_dlcs,
                 'externalAssignee': slot.external_assignee,
                 'registrationCount': registration_count,
+                'registrationUid': user_registration_uid,
                 'blocked': slot.blocked,
                 'reserve': slot.reserve,
                 'autoAssignable': slot.auto_assignable,
