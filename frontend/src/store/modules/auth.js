@@ -89,7 +89,7 @@ const actions = {
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
-            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.deleteAccount.error')} - ${error.response.data.message}`
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.deleteAccount.error')} - ${error.response.data.detail}`
           })
         } else if (error.request) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'deleteAccount' } }) : null
@@ -142,7 +142,7 @@ const actions = {
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
-            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getLoginRedirectUrl.error')} - ${error.response.data.message}`
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getLoginRedirectUrl.error')} - ${error.response.data.detail}`
           })
         } else if (error.request) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'getLoginRedirectUrl' } }) : null
@@ -200,7 +200,7 @@ const actions = {
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
-            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.performLogin.error')} - ${error.response.data.message}`
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.performLogin.error')} - ${error.response.data.detail}`
           })
         } else if (error.request) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'performLogin' } }) : null
@@ -327,7 +327,7 @@ const actions = {
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
-            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.refreshToken.error')} - ${error.response.data.message}`
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.refreshToken.error')} - ${error.response.data.detail}`
           })
         } else if (error.request) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'refreshToken' } }) : null
@@ -388,7 +388,7 @@ const actions = {
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
-            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getAccountDetails.error')} - ${error.response.data.message}`
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getAccountDetails.error')} - ${error.response.data.detail}`
           })
         } else if (error.request) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'getAccountDetails' } }) : null
@@ -454,7 +454,7 @@ const actions = {
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
-            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.editAccount.error')} - ${error.response.data.message}`
+            alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.editAccount.error')} - ${error.response.data.detail}`
           })
         } else if (error.request) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'auth', function: 'editAccount' } }) : null
