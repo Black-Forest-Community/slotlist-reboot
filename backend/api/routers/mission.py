@@ -877,12 +877,22 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
     if not is_self_assignment and not is_creator and not is_admin:
         return 403, {'detail': 'Insufficient permissions to assign other users to slots'}
     
+    # Remove any existing registrations for this slot by the target user
+    MissionSlotRegistration.objects.filter(slot=slot, user=target_user).delete()
+    
     # Assign the slot
     slot.assignee = target_user
     slot.save()
     
+    # Create a confirmed registration so the user can unregister via the UI
+    registration = MissionSlotRegistration.objects.create(
+        user=target_user,
+        slot=slot,
+        status='confirmed',
+        comment=f'via {current_user.nickname}'
+    )
+    
     # TODO: Create notification if not suppressed
-    # TODO: Remove any existing registrations for this slot
     
     return {
         'slot': {
@@ -891,7 +901,8 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
             'assignee': {
                 'uid': str(target_user.uid),
                 'nickname': target_user.nickname,
-            }
+            },
+            'registrationUid': str(registration.uid)
         }
     }
 
@@ -916,6 +927,9 @@ def unassign_slot(request, slug: str, slot_uid: UUID):
     
     if not is_assignee and not is_creator and not has_perm:
         return 403, {'detail': 'Insufficient permissions to unassign this slot'}
+    
+    # Remove any confirmed registrations when unassigning
+    MissionSlotRegistration.objects.filter(slot=slot, status='confirmed').delete()
     
     slot.assignee = None
     slot.save()
