@@ -1164,34 +1164,43 @@ def update_mission_slot(request, slug: str, slot_uid: UUID, data: MissionSlotUpd
     
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
     
+    # Get only fields that were actually set in the request
+    update_data = data.model_dump(exclude_unset=True)
+    
     # Update fields if provided
-    if data.title is not None:
+    if 'title' in update_data:
         slot.title = data.title
     
-    if data.description is not None:
+    if 'description' in update_data:
         slot.description = data.description
     
-    if data.detailedDescription is not None:
+    if 'detailedDescription' in update_data:
         slot.detailed_description = data.detailedDescription
     
-    if data.requiredDLCs is not None:
+    if 'requiredDLCs' in update_data:
         validate_dlc_list(data.requiredDLCs, 'requiredDLCs')
         slot.required_dlcs = data.requiredDLCs
     
-    if data.restrictedCommunityUid is not None:
-        restricted_community = get_object_or_404(Community, uid=data.restrictedCommunityUid)
-        slot.restricted_community = restricted_community
+    if 'restrictedCommunityUid' in update_data:
+        if data.restrictedCommunityUid is not None:
+            restricted_community = get_object_or_404(Community, uid=data.restrictedCommunityUid)
+            slot.restricted_community = restricted_community
+        else:
+            slot.restricted_community = None
     
-    if data.blocked is not None:
+    if 'blocked' in update_data:
         slot.blocked = data.blocked
     
-    if data.reserve is not None:
+    if 'reserve' in update_data:
         slot.reserve = data.reserve
     
-    if data.autoAssignable is not None:
+    if 'autoAssignable' in update_data:
         slot.auto_assignable = data.autoAssignable
     
-    if data.orderNumber is not None and data.orderNumber != slot.order_number:
+    if 'externalAssignee' in update_data:
+        slot.external_assignee = data.externalAssignee
+    
+    if 'orderNumber' in update_data and data.orderNumber != slot.order_number:
         old_order = slot.order_number
         new_order = data.orderNumber
         
@@ -1224,7 +1233,8 @@ def update_mission_slot(request, slug: str, slot_uid: UUID, data: MissionSlotUpd
             'requiredDLCs': slot.required_dlcs,
             'blocked': slot.blocked,
             'reserve': slot.reserve,
-            'autoAssignable': slot.auto_assignable
+            'autoAssignable': slot.auto_assignable,
+            'externalAssignee': slot.external_assignee
         }
     }
 

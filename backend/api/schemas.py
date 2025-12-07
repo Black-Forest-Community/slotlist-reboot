@@ -320,6 +320,7 @@ class MissionSlotUpdateSchema(Schema):
     blocked: Optional[bool] = None
     reserve: Optional[bool] = None
     autoAssignable: Optional[bool] = None
+    externalAssignee: Optional[str] = None
 
 
 class CommunityApplicationStatusSchema(Schema):
