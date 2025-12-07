@@ -16,14 +16,14 @@
         <p class="lead text-justify">{{ missionDetails.description }}</p>
         <hr class="my-4">
         <div class="row text-center">
-          <div class="col">
+          <div class="col-12 col-md-4">
             <h5>{{ $t('mission.community') }}</h5>
             <p>
               <router-link v-if="missionDetails.community" :to="{name: 'communityDetails', params: {communitySlug: missionDetails.community.slug}}">[{{ missionDetails.community.tag }}] {{ missionDetails.community.name }}</router-link>
               <span v-if="!missionDetails.community" class="text-muted font-italic">{{ $t('account.notAssociated') }}</span>
             </p>
           </div>
-          <div class="col">
+          <div class="col-12 col-md-4">
             <h5>{{ $t('mission.requiredDLCs') }}</h5>
             <p>
               <span v-if="missionRequiredDLCs && missionRequiredDLCs.length > 0">
@@ -32,27 +32,27 @@
               <span v-else class="text-muted font-italic">{{ $t('mission.requiredDLCs.none') }}</span>
             </p>
           </div>
-          <div class="col">
+          <div class="col-12 col-md-4">
             <h5>{{ $t('mission.visibility') }}</h5>
             <p v-html="formattedMissionVisibility"></p>
           </div>
         </div>
         <div class="row text-center">
-          <div class="col">
+          <div class="col-6 col-md">
             <h5>{{ $t('mission.slottingTime') }}</h5>
             <p>{{ formatDateTime(missionDetails.slottingTime) }}</p>
           </div>
-          <div class="col">
+          <div class="col-6 col-md">
             <h5>{{ $t('mission.startTime') }}</h5>
             <p>{{ formatDateTime(missionDetails.startTime) }}</p>
           </div>
-          <div class="col">
+          <div class="col-6 col-md">
             <h5>{{ $t('mission.endTime') }}
               <span class="text-muted">({{ $t('mission.abbr.estimated') }})</span>
             </h5>
             <p>{{ formatDateTime(missionDetails.endTime) }}</p>
           </div>
-          <div class="col">
+          <div class="col-6 col-md">
             <h5>{{ $t('mission.briefingTime.short') }}
               <span class="text-muted">({{ $t('mission.abbr.leadership') }})</span>
             </h5>
@@ -80,7 +80,7 @@
         </div>
         <br>
         <div class="row text-center">
-          <div class="col">
+          <div class="col-12 col-md-6">
             <h5>{{ $t('mission.gameServer') }}</h5>
             <div v-if="missionDetails.gameServer">
               <div class="row justify-content-center">
@@ -116,7 +116,7 @@
             </div>
             <p v-if="!missionDetails.gameServer" class="text-muted font-italic">{{ $t('misc.notProvided') }}</p>
           </div>
-          <div class="col">
+          <div class="col-12 col-md-6">
             <h5>{{ $t('mission.voiceComms') }}</h5>
             <div v-if="missionDetails.voiceComms">
               <div class="row justify-content-center">
@@ -155,11 +155,11 @@
         </div>
         <br>
         <div class="row text-center">
-          <div class="col">
+          <div class="col-12 col-md-6">
             <h5>{{ $t('mission.techSupport') }}</h5>
             <p class="html ql-editor text-center" v-html="optionalTechSupport"></p>
           </div>
-          <div class="col">
+          <div class="col-12 col-md-6">
             <h5>{{ $t('mission.rules') }}</h5>
             <p class="html ql-editor text-center" v-html="optionalRules"></p>
           </div>
