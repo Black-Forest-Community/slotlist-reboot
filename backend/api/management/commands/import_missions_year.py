@@ -30,6 +30,11 @@ class Command(BaseCommand):
             help='Skip missions that already exist instead of failing',
         )
         parser.add_argument(
+            '--update',
+            action='store_true',
+            help='Update existing missions with new data from API (re-imports media content in body fields)',
+        )
+        parser.add_argument(
             '--limit',
             type=int,
             default=None,
@@ -40,9 +45,17 @@ class Command(BaseCommand):
         year = options['year']
         creator_uid = options.get('creator_uid')
         skip_existing = options['skip_existing']
+        update_existing = options['update']
         limit = options.get('limit')
 
+        # Validate that skip-existing and update are not both set
+        if skip_existing and update_existing:
+            self.stdout.write(self.style.ERROR('Cannot use both --skip-existing and --update together'))
+            return
+
         self.stdout.write(f'Importing missions from year {year}...')
+        if update_existing:
+            self.stdout.write(self.style.WARNING('Update mode: Existing missions will be updated with new data'))
         
         # Fetch missions list from API
         try:
@@ -68,7 +81,7 @@ class Command(BaseCommand):
             self.stdout.write(f'\n[{i}/{len(missions)}] Importing: {title} ({slug})')
             
             try:
-                mission = import_mission(slug, creator_uid)
+                mission = import_mission(slug, creator_uid, update_existing=update_existing)
                 self.stdout.write(self.style.SUCCESS(f'  ✓ Imported mission UID: {mission.uid}'))
                 imported_count += 1
             except MissionAlreadyExistsError:
@@ -84,7 +97,7 @@ class Command(BaseCommand):
 
         # Summary
         self.stdout.write('\n' + '=' * 60)
-        self.stdout.write(self.style.SUCCESS(f'Imported: {imported_count}'))
+        self.stdout.write(self.style.SUCCESS(f'Imported/Updated: {imported_count}'))
         if skipped_count > 0:
             self.stdout.write(self.style.WARNING(f'Skipped: {skipped_count}'))
         if failed_count > 0:
