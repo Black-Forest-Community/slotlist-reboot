@@ -40,6 +40,7 @@ services:
       - DJANGO_SECRET_KEY=development-django-secret-change-in-production
       - ALLOWED_HOSTS=*
       - CORS_ALLOW_ALL_ORIGINS=True
+      - BACKEND_URL=http://localhost:8022
     env_file:
       - ./.env
     depends_on:
