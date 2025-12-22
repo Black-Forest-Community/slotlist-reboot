@@ -15,7 +15,7 @@
     </td>
     <td :data-label="$t('mission.list.slot.counts')" class="text-center">
       <b-popover :content="$t('mission.list.slot.counts.popover', mission.slotCounts)" :triggers="['hover']">
-        {{ mission.slotCounts.assigned + mission.slotCounts.external + mission.slotCounts.unassigned }}/{{ mission.slotCounts.total }}
+        {{ mission.slotCounts.assigned + mission.slotCounts.external }}/{{ mission.slotCounts.total }}
       </b-popover>
     </td>
     <td :data-label="$t('mission.list.slot.counts.available')" class="text-center">
