@@ -184,7 +184,7 @@ class Command(BaseCommand):
         
         # Create dummy creator
         community = get_or_create_community(mission_data['community'])
-        dummy_nickname = f"Import-{community.name}" if community else f"Import-{community_slug}"
+        dummy_nickname = f"Missionsbauer-{community.name}" if community else f"Missionsbauer-{community_slug}"
         dummy_steam_id = f"import_dummy_{community_slug}"
         
         creator, created = User.objects.get_or_create(
