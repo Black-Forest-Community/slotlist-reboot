@@ -64,16 +64,17 @@ def fetch_mission_data(slug: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         raise APIFetchError(f'Failed to fetch mission data: {e}')
 
 
-def get_or_create_community(community_data: Dict[str, Any]) -> Optional[Community]:
+def get_or_create_community(community_data: Dict[str, Any], only_if_exists: bool = False) -> Optional[Community]:
     """
     Get or create community from API data.
     Downloads and stores community logo if available.
     
     Args:
         community_data: Community data from API (can be None)
+        only_if_exists: If True, only return existing communities, don't create new ones
         
     Returns:
-        Community instance or None if community_data is None
+        Community instance or None if community_data is None or doesn't exist
     """
     if not community_data:
         return None
@@ -84,6 +85,10 @@ def get_or_create_community(community_data: Dict[str, Any]) -> Optional[Communit
         return community
     except Community.DoesNotExist:
         pass
+    
+    # If only_if_exists is True, don't create new community
+    if only_if_exists:
+        return None
     
     # Download logo if available
     logo_url = community_data.get('logoUrl')

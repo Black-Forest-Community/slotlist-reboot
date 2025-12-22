@@ -282,11 +282,12 @@ class Command(BaseCommand):
             
             # Create slots
             for slot_data in group_data['slots']:
-                # Get restricted community if any
+                # Only get restricted community if it already exists, don't create new ones
                 restricted_community = None
                 if slot_data.get('restrictedCommunity'):
                     restricted_community = get_or_create_community(
-                        slot_data['restrictedCommunity']
+                        slot_data['restrictedCommunity'],
+                        only_if_exists=True
                     )
                 
                 # Try to find existing assignee by UID, but don't create new one
