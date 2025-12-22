@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import datetime
 from django.utils.text import slugify
 from pydantic import BaseModel
-from api.models import Mission, Community, User, MissionSlotGroup, MissionSlot, ArmaThreeDLC, MissionSlotRegistration
+from api.models import Mission, Community, User, MissionSlotGroup, MissionSlot, ArmaThreeDLC, MissionSlotRegistration, Notification
 from api.schemas import (
     MissionCreateSchema, MissionUpdateSchema, MissionDuplicateSchema,
     MissionSlotGroupCreateSchema, MissionSlotGroupUpdateSchema,
@@ -892,7 +892,25 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
         comment=f'via {current_user.nickname}'
     )
     
-    # TODO: Create notification if not suppressed
+    # Create notification for mission creator about the new assignment
+    if not suppress_notifications and mission.creator and str(mission.creator.uid) != str(target_user_uid):
+        notification_message = f'{target_user.nickname} signed up for "{slot.title}" in {mission.title}'
+        if not is_self_assignment:
+            notification_message = f'{current_user.nickname} assigned {target_user.nickname} to "{slot.title}" in {mission.title}'
+        
+        Notification.objects.create(
+            user=mission.creator,
+            notification_type='mission.slot.assigned',
+            title='New Slot Assignment',
+            message=notification_message,
+            additional_data={
+                'missionSlug': mission.slug,
+                'slotUid': str(slot.uid),
+                'slotTitle': slot.title,
+                'assigneeUid': str(target_user.uid),
+                'assigneeNickname': target_user.nickname,
+            }
+        )
     
     return {
         'slot': {
