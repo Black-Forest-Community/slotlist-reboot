@@ -6,7 +6,10 @@
       </router-link>
     </td>
     <td v-html="formattedComment" v-if="(isMissionEditor || hasMissionSlotlistCommunityPermission) && registration.uid"></td>
-    <td>{{ formatDateTime(registration.createdAt) }}</td>
+    <td>
+      <div>{{ formatDate(registration.createdAt) }}</div>
+      <div>{{ formatTime(registration.createdAt) }}</div>
+    </td>
     <td class="text-center" v-html="formattedConfirmation"></td>
     <td class="text-center" v-if="(isMissionEditor || hasMissionSlotlistCommunityPermission) && registration.uid && !hasMissionEnded">
       <b-btn v-if="!registration.confirmed" variant="success" size="sm" @click="modifyMissionSlotRegistration(true)">
@@ -65,6 +68,12 @@ export default {
         slotOrderNumber: this.$store.getters.missionSlotDetails.orderNumber,
         slotTitle: this.$store.getters.missionSlotDetails.title,
       })
+    },
+    formatDate(dateTime) {
+      return moment(dateTime).format('L')
+    },
+    formatTime(dateTime) {
+      return moment(dateTime).format('LTS')
     },
     modifyMissionSlotRegistration(confirm) {
       this.$store.dispatch('modifyMissionSlotRegistration', {
