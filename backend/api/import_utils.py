@@ -11,6 +11,7 @@ from api.models import (
     Mission, MissionSlotGroup, MissionSlot,
     Community, User
 )
+from api.image_utils import download_and_store_image
 
 
 class MissionImportError(Exception):
@@ -66,6 +67,7 @@ def fetch_mission_data(slug: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 def get_or_create_community(community_data: Dict[str, Any]) -> Optional[Community]:
     """
     Get or create community from API data.
+    Downloads and stores community logo if available.
     
     Args:
         community_data: Community data from API (can be None)
@@ -75,17 +77,34 @@ def get_or_create_community(community_data: Dict[str, Any]) -> Optional[Communit
     """
     if not community_data:
         return None
-        
-    community, created = Community.objects.get_or_create(
+    
+    # Check if community already exists
+    try:
+        community = Community.objects.get(uid=community_data['uid'])
+        return community
+    except Community.DoesNotExist:
+        pass
+    
+    # Download logo if available
+    logo_url = community_data.get('logoUrl')
+    if logo_url:
+        stored_logo_url = download_and_store_image(
+            logo_url,
+            f'communities/{community_data["slug"]}'
+        )
+        if stored_logo_url:
+            logo_url = stored_logo_url
+    
+    # Create new community
+    community = Community.objects.create(
         uid=community_data['uid'],
-        defaults={
-            'name': community_data['name'],
-            'tag': community_data['tag'],
-            'slug': community_data['slug'],
-            'website': community_data.get('website'),
-            'logo_url': community_data.get('logoUrl'),
-        }
+        name=community_data['name'],
+        tag=community_data['tag'],
+        slug=community_data['slug'],
+        website=community_data.get('website'),
+        logo_url=logo_url,
     )
+    
     return community
 
 

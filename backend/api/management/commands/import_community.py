@@ -5,6 +5,7 @@ from api.import_utils import (
     get_or_create_community,
     APIFetchError,
 )
+from api.image_utils import download_and_store_image
 from api.models import Mission, MissionSlotGroup, MissionSlot, Community, User
 from django.db import transaction
 
@@ -221,6 +222,17 @@ class Command(BaseCommand):
             # Get or create community
             community = get_or_create_community(mission_data['community'])
             
+            # Download and store banner image if available
+            banner_image_url = mission_data.get('bannerImageUrl')
+            if banner_image_url:
+                self.stdout.write(f'  Downloading banner image...')
+                stored_url = download_and_store_image(
+                    banner_image_url, 
+                    f'missions/{mission_data["slug"]}'
+                )
+                if stored_url:
+                    banner_image_url = stored_url
+            
             # Create mission
             mission = Mission.objects.create(
                 slug=mission_data['slug'],
@@ -237,7 +249,7 @@ class Command(BaseCommand):
                 tech_support=mission_data.get('techSupport'),
                 rules=mission_data.get('rules'),
                 required_dlcs=mission_data.get('requiredDLCs', []),
-                banner_image_url=mission_data.get('bannerImageUrl'),
+                banner_image_url=banner_image_url,
                 game_server=mission_data.get('gameServer'),
                 voice_comms=mission_data.get('voiceComms'),
                 repositories=mission_data.get('repositories', []),
