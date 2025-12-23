@@ -241,6 +241,13 @@ def _import_slots(mission: Mission, slot_groups_data: list) -> None:
         slot_groups_data: List of slot group data from API
     """
     for group_data in slot_groups_data:
+        # Get restricted community for slot group if any
+        group_restricted_community = None
+        if group_data.get('restrictedCommunity'):
+            group_restricted_community = get_or_create_community(
+                group_data['restrictedCommunity']
+            )
+        
         # Create slot group
         slot_group = MissionSlotGroup.objects.create(
             uid=group_data['uid'],
@@ -248,6 +255,7 @@ def _import_slots(mission: Mission, slot_groups_data: list) -> None:
             title=group_data['title'],
             description=group_data.get('description'),
             order_number=group_data['orderNumber'],
+            restricted_community=group_restricted_community,
         )
         
         # Create slots
