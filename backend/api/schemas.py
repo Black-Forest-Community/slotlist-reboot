@@ -38,6 +38,7 @@ class MissionSlotGroupSchema(Schema):
     title: str
     description: str
     order_number: int
+    restricted_community: Optional[CommunitySchema] = None
 
 
 class MissionSlotSchema(Schema):
@@ -303,12 +304,14 @@ class MissionImportResponseSchema(Schema):
 class MissionSlotGroupCreateSchema(Schema):
     title: str
     description: Optional[str] = None
+    restrictedCommunityUid: Optional[UUID] = None
     insertAfter: int = 0
 
 
 class MissionSlotGroupUpdateSchema(Schema):
     title: Optional[str] = None
     description: Optional[str] = None
+    restrictedCommunityUid: Optional[UUID] = None
     orderNumber: Optional[int] = None
 
 

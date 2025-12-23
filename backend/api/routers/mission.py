@@ -518,7 +518,8 @@ def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
                 mission=new_mission,
                 title=slot_group.title,
                 description=slot_group.description,
-                order_number=slot_group.order_number
+                order_number=slot_group.order_number,
+                restricted_community=slot_group.restricted_community
             )
             
             # Duplicate slots in this group
@@ -613,7 +614,8 @@ def get_mission_slots(request, slug: str):
     slot_groups = MissionSlotGroup.objects.filter(mission=mission).prefetch_related(
         'slots__assignee',
         'slots__restricted_community',
-        'slots__registrations__user'
+        'slots__registrations__user',
+        'restricted_community'
     ).order_by('order_number')
     
     result = []
@@ -663,6 +665,12 @@ def get_mission_slots(request, slug: str):
             'title': slot_group.title,
             'description': slot_group.description,
             'orderNumber': slot_group.order_number,
+            'restrictedCommunity': {
+                'uid': str(slot_group.restricted_community.uid),
+                'name': slot_group.restricted_community.name,
+                'tag': slot_group.restricted_community.tag,
+                'slug': slot_group.restricted_community.slug,
+            } if slot_group.restricted_community else None,
             'slots': slots
         }
         result.append(group_data)
@@ -1060,12 +1068,18 @@ def create_mission_slot_group(request, slug: str, data: MissionSlotGroupCreateSc
             group.order_number += 1
             group.save()
     
+    # Get restricted community if specified
+    restricted_community = None
+    if data.restrictedCommunityUid:
+        restricted_community = get_object_or_404(Community, uid=data.restrictedCommunityUid)
+    
     # Create the new slot group
     slot_group = MissionSlotGroup.objects.create(
         mission=mission,
         title=data.title,
         description=data.description if data.description else '',
-        order_number=new_order_number
+        order_number=new_order_number,
+        restricted_community=restricted_community
     )
     
     return {
@@ -1074,6 +1088,11 @@ def create_mission_slot_group(request, slug: str, data: MissionSlotGroupCreateSc
             'title': slot_group.title,
             'description': slot_group.description,
             'orderNumber': slot_group.order_number,
+            'restrictedCommunity': {
+                'uid': str(restricted_community.uid),
+                'name': restricted_community.name,
+                'tag': restricted_community.tag
+            } if restricted_community else None,
             'slots': []
         }
     }
@@ -1104,6 +1123,15 @@ def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: Mi
     if data.description is not None:
         slot_group.description = data.description
     
+    # Handle restricted community update
+    if hasattr(data, 'restrictedCommunityUid'):
+        if data.restrictedCommunityUid is not None:
+            restricted_community = get_object_or_404(Community, uid=data.restrictedCommunityUid)
+            slot_group.restricted_community = restricted_community
+        elif data.restrictedCommunityUid is None:
+            # Explicitly set to None to remove restriction
+            slot_group.restricted_community = None
+    
     if data.orderNumber is not None and data.orderNumber != slot_group.order_number:
         old_order = slot_group.order_number
         new_order = data.orderNumber
@@ -1133,7 +1161,12 @@ def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: Mi
             'uid': str(slot_group.uid),
             'title': slot_group.title,
             'description': slot_group.description,
-            'orderNumber': slot_group.order_number
+            'orderNumber': slot_group.order_number,
+            'restrictedCommunity': {
+                'uid': str(slot_group.restricted_community.uid),
+                'name': slot_group.restricted_community.name,
+                'tag': slot_group.restricted_community.tag
+            } if slot_group.restricted_community else None
         }
     }
 
