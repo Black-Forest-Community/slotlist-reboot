@@ -716,6 +716,31 @@ def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistration
         comment=data.comment
     )
     
+    # Create notification for mission creator about the new slot registration
+    if mission.creator and str(mission.creator.uid) != str(user_uid):
+        user_nickname_with_tag = user.nickname
+        if user.community and user.community.tag:
+            user_nickname_with_tag = f'[{user.community.tag}] {user.nickname}'
+        
+        Notification.objects.create(
+            user=mission.creator,
+            notification_type='mission.slot.registration.new',
+            title='New Slot Registration',
+            message=f'{user.nickname} registered for "{slot.title}" in {mission.title}',
+            additional_data={
+                'missionSlug': mission.slug,
+                'missionTitle': mission.title,
+                'slotUid': str(slot.uid),
+                'slotTitle': slot.title,
+                'userUid': str(user.uid),
+                'userNickname': user.nickname,
+                'userCommunityTag': user.community.tag if user.community else None,
+                'userNicknameWithTag': user_nickname_with_tag,
+                'registrationUid': str(registration.uid),
+                'comment': registration.comment,
+            }
+        )
+    
     return {
         'registration': {
             'uid': str(registration.uid),
@@ -766,6 +791,20 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
         registration.status = 'confirmed'
         registration.save()
         
+        # Create notification for the user about their registration being confirmed
+        Notification.objects.create(
+            user=registration.user,
+            notification_type='mission.slot.assigned',
+            title='Slot Assignment Confirmed',
+            message=f'Your registration for "{slot.title}" in {mission.title} has been confirmed',
+            additional_data={
+                'missionSlug': mission.slug,
+                'missionTitle': mission.title,
+                'slotUid': str(slot.uid),
+                'slotTitle': slot.title,
+            }
+        )
+        
         return {
             'registration': {
                 'uid': str(registration.uid),
@@ -789,6 +828,20 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
         # Update registration status to rejected
         registration.status = 'rejected'
         registration.save()
+        
+        # Create notification for the user about their registration being rejected
+        Notification.objects.create(
+            user=registration.user,
+            notification_type='mission.slot.unassigned',
+            title='Slot Registration Rejected',
+            message=f'Your registration for "{slot.title}" in {mission.title} has been rejected',
+            additional_data={
+                'missionSlug': mission.slug,
+                'missionTitle': mission.title,
+                'slotUid': str(slot.uid),
+                'slotTitle': slot.title,
+            }
+        )
         
         return {
             'registration': {

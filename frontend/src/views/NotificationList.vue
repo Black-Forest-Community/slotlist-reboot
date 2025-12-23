@@ -33,6 +33,8 @@ export default {
   beforeCreate: function() {
     this.$store.dispatch('getNotifications')
       .then(() => {
+        // Mark all notifications as read when viewing the list
+        this.$store.dispatch('markAllNotificationsRead')
         this.$store.dispatch('getUnseenNotificationCount', { autoRefresh: true })
       })
   },

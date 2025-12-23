@@ -45,6 +45,18 @@ def get_unseen_count(request):
     return {'unseen': count}
 
 
+@router.patch('/read-all')
+def mark_all_notifications_read(request):
+    """Mark all notifications as read for the authenticated user"""
+    user_uid = request.auth.get('user', {}).get('uid')
+    user = get_object_or_404(User, uid=user_uid)
+    
+    # Update all unread notifications for this user
+    count = Notification.objects.filter(user=user, read=False).update(read=True)
+    
+    return {'success': True, 'count': count}
+
+
 @router.get('/{notification_uid}', response=NotificationDetailResponseSchema)
 def get_notification(request, notification_uid: UUID):
     """Get a single notification"""

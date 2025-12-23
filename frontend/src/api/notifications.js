@@ -6,6 +6,9 @@ export const v1 = {
   },
   getUnseenNotificationCount() {
     return axios.get('/v1/notifications/unseen')
+  },
+  markAllNotificationsRead() {
+    return axios.patch('/v1/notifications/read-all')
   }
 }
 

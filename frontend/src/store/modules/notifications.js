@@ -238,6 +238,28 @@ const actions = {
       page: payload.page
     })
   },
+  markAllNotificationsRead({ dispatch }) {
+    return NotificationsApi.markAllNotificationsRead()
+      .then(function (response) {
+        if (response.status !== 200) {
+          console.error(response)
+          throw 'Marking notifications as read failed'
+        }
+        
+        // Refresh the notification count
+        dispatch('getUnseenNotificationCount')
+      }).catch((error) => {
+        if (error.response) {
+          console.error('markAllNotificationsRead', error.response)
+        } else if (error.request) {
+          error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'notifications', function: 'markAllNotificationsRead' } }) : null
+          console.error('markAllNotificationsRead', error.request)
+        } else {
+          error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'notifications', function: 'markAllNotificationsRead' } }) : null
+          console.error('markAllNotificationsRead', error.message)
+        }
+      })
+  },
   stopNotificationPolling({ state }) {
     if (!_.isNil(state.unseenNotificationCountSetInterval)) {
       clearInterval(state.unseenNotificationCountSetInterval)

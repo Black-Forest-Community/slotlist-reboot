@@ -109,12 +109,28 @@ class CommunityApplicationSchema(Schema):
 
 class NotificationSchema(Schema):
     uid: UUID
-    notification_type: str = Field(..., alias='notificationType')
+    notificationType: str
     title: Optional[str] = None
     message: str
-    additional_data: Optional[Any] = Field(None, alias='additionalData')
-    read: bool
-    created_at: datetime = Field(..., alias='createdAt')
+    data: Optional[Any] = None
+    seenAt: Optional[datetime] = None
+    createdAt: datetime
+    
+    @staticmethod
+    def resolve_notificationType(obj):
+        return obj.notification_type
+    
+    @staticmethod
+    def resolve_data(obj):
+        return obj.additional_data
+    
+    @staticmethod
+    def resolve_seenAt(obj):
+        return obj.updated_at if obj.read else None
+    
+    @staticmethod
+    def resolve_createdAt(obj):
+        return obj.created_at
     
     class Config:
         populate_by_name = True
