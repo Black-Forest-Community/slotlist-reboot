@@ -47,6 +47,11 @@ export default {
       }
     },
     notificationText() {
+      if (!this.notification.notificationType) {
+        console.warn('Notification missing notificationType:', this.notification)
+        return '<span class="text-warning">Unknown notification type</span>'
+      }
+
       switch (this.notification.notificationType) {
         case 'community.permission.granted':
         case 'community.permission.revoked':
