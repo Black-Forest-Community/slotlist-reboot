@@ -8,14 +8,11 @@ from api.models import User, Permission
 
 def generate_jwt(user: User) -> str:
     """Generate a JWT token for a user"""
-    from api.models import Mission
-    
     permissions = list(Permission.objects.filter(user=user).values_list('permission', flat=True))
     
-    # Add dynamic creator permissions for missions created by this user
-    created_missions = Mission.objects.filter(creator=user).values_list('slug', flat=True)
-    for mission_slug in created_missions:
-        permissions.append(f'mission.{mission_slug}.creator')
+    # Note: We don't include mission.{slug}.creator permissions in the JWT.
+    # Creator status is checked directly by comparing mission.creator.uid with user.uid
+    # in the view functions. This prevents JWT bloat for users with many missions.
     
     payload = {
         'user': {
