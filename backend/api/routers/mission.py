@@ -15,6 +15,7 @@ from api.schemas import (
     MissionPermissionCreateSchema
 )
 from api.auth import has_permission, generate_jwt
+from api.permissions import can_view_mission, filter_missions_by_visibility
 
 router = Router()
 
@@ -48,11 +49,17 @@ def list_missions(request, limit: int = 25, offset: int = 0, includeEnded: bool 
     elif not includeEnded:
         query = query.filter(end_time__gte=datetime.utcnow()) | query.filter(end_time__isnull=True)
     
-    # Get total count before applying pagination
-    total = query.count()
+    # Order missions before filtering
+    missions = query.order_by('-start_time')
     
-    # Apply pagination
-    missions = query.order_by('-start_time')[offset:offset + limit]
+    # Filter missions by visibility
+    visible_missions = filter_missions_by_visibility(missions, request)
+    
+    # Get total count after visibility filtering
+    total = len(visible_missions)
+    
+    # Apply pagination to filtered results
+    paginated_missions = visible_missions[offset:offset + limit]
     
     # Get current user if authenticated
     current_user_uid = None
@@ -61,7 +68,7 @@ def list_missions(request, limit: int = 25, offset: int = 0, includeEnded: bool 
     
     # Calculate slot counts for each mission
     result_missions = []
-    for mission in missions:
+    for mission in paginated_missions:
         # Get all slots for this mission
         from django.db.models import Count, Q
         slots = MissionSlot.objects.filter(slot_group__mission=mission)
@@ -151,6 +158,11 @@ def check_slug_availability(request, slug: str):
 def get_mission(request, slug: str):
     """Get a single mission by slug"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
+    
+    # Check if user can view this mission
+    if not can_view_mission(mission, request):
+        from ninja.errors import HttpError
+        raise HttpError(403, 'You do not have permission to view this mission')
     
     mission_data = {
         'uid': mission.uid,
@@ -297,7 +309,7 @@ def create_mission(request, payload: MissionCreateSchema):
     }
 
 
-@router.patch('/{slug}')
+@router.patch('/{slug}', response={200: dict, 403: dict})
 def update_mission(request, slug: str, payload: MissionUpdateSchema):
     """Update a mission"""
     mission = get_object_or_404(Mission, slug=slug)
@@ -581,6 +593,11 @@ def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
 def get_mission_slots(request, slug: str):
     """Get all slots for a mission organized by slot groups"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
+    
+    # Check if user can view this mission
+    if not can_view_mission(mission, request):
+        from ninja.errors import HttpError
+        raise HttpError(403, 'You do not have permission to view this mission')
     
     # Get current user UID if authenticated (manually check Authorization header)
     current_user_uid = None
