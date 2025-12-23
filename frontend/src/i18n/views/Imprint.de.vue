@@ -1,13 +1,6 @@
 <template>
   <b-jumbotron header="Impressum">
     <br>
-    <h4>Offenlegung</h4>
-    <p class="text-justify">
-      <address>
-        TODO
-      </address>
-    </p>
-    <br>
     <h4>Haftungsausschluss</h4>
     <h5>Inhalt des Onlineangebotes</h5>
     <p class="text-justify">
