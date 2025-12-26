@@ -611,7 +611,7 @@ def get_mission_slots(request, slug: str):
     
     # Get all slot groups with their slots for this mission
     slot_groups = MissionSlotGroup.objects.filter(mission=mission).prefetch_related(
-        'slots__assignee',
+        'slots__assignee__community',
         'slots__restricted_community',
         'slots__registrations__user'
     ).order_by('order_number')
@@ -648,6 +648,12 @@ def get_mission_slots(request, slug: str):
                     'uid': str(slot.assignee.uid),
                     'nickname': slot.assignee.nickname,
                     'steamId': slot.assignee.steam_id,
+                    'community': {
+                        'uid': str(slot.assignee.community.uid),
+                        'name': slot.assignee.community.name,
+                        'tag': slot.assignee.community.tag,
+                        'slug': slot.assignee.community.slug,
+                    } if slot.assignee.community else None
                 } if slot.assignee else None,
                 'restrictedCommunity': {
                     'uid': str(slot.restricted_community.uid),
@@ -687,7 +693,7 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
     
     total = MissionSlotRegistration.objects.filter(slot=slot).count()
-    registrations = MissionSlotRegistration.objects.filter(slot=slot).select_related('user')[offset:offset + limit]
+    registrations = MissionSlotRegistration.objects.filter(slot=slot).select_related('user__community')[offset:offset + limit]
     
     return {
         'registrations': [
@@ -698,6 +704,12 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
                     'uid': str(reg.user.uid),
                     'nickname': reg.user.nickname,
                     'steamId': reg.user.steam_id,
+                    'community': {
+                        'uid': str(reg.user.community.uid),
+                        'name': reg.user.community.name,
+                        'tag': reg.user.community.tag,
+                        'slug': reg.user.community.slug,
+                    } if reg.user.community else None
                 },
                 'comment': reg.comment,
                 'confirmed': reg.status == 'confirmed',
@@ -716,7 +728,7 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
 def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistrationCreateSchema):
     """Register the authenticated user for a mission slot"""
     user_uid = request.auth.get('user', {}).get('uid')
-    user = get_object_or_404(User, uid=user_uid)
+    user = get_object_or_404(User.objects.select_related('community'), uid=user_uid)
     
     mission = get_object_or_404(Mission, slug=slug)
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
@@ -766,6 +778,12 @@ def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistration
                 'uid': str(user.uid),
                 'nickname': user.nickname,
                 'steamId': user.steam_id,
+                'community': {
+                    'uid': str(user.community.uid),
+                    'name': user.community.name,
+                    'tag': user.community.tag,
+                    'slug': user.community.slug,
+                } if user.community else None
             },
             'comment': registration.comment,
             'confirmed': False,
@@ -784,7 +802,7 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
     
     mission = get_object_or_404(Mission, slug=slug)
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
-    registration = get_object_or_404(MissionSlotRegistration, uid=registration_uid, slot=slot)
+    registration = get_object_or_404(MissionSlotRegistration.objects.select_related('user__community'), uid=registration_uid, slot=slot)
 
     
     # Check permissions - user must be mission creator or have appropriate permissions
@@ -829,6 +847,12 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
                     'uid': str(registration.user.uid),
                     'nickname': registration.user.nickname,
                     'steamId': registration.user.steam_id,
+                    'community': {
+                        'uid': str(registration.user.community.uid),
+                        'name': registration.user.community.name,
+                        'tag': registration.user.community.tag,
+                        'slug': registration.user.community.slug,
+                    } if registration.user.community else None
                 },
                 'comment': registration.comment,
                 'confirmed': True,
@@ -867,6 +891,12 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
                     'uid': str(registration.user.uid),
                     'nickname': registration.user.nickname,
                     'steamId': registration.user.steam_id,
+                    'community': {
+                        'uid': str(registration.user.community.uid),
+                        'name': registration.user.community.name,
+                        'tag': registration.user.community.tag,
+                        'slug': registration.user.community.slug,
+                    } if registration.user.community else None
                 },
                 'comment': registration.comment,
                 'confirmed': False,
@@ -909,7 +939,7 @@ def delete_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
 def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSchema):
     """Assign a user to a mission slot"""
     current_user_uid = request.auth.get('user', {}).get('uid')
-    current_user = get_object_or_404(User, uid=current_user_uid)
+    current_user = get_object_or_404(User.objects.select_related('community'), uid=current_user_uid)
     permissions = request.auth.get('permissions', [])
     
     mission = get_object_or_404(Mission, slug=slug)
@@ -920,7 +950,7 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
     force = payload.force
     suppress_notifications = payload.suppressNotifications
     
-    target_user = get_object_or_404(User, uid=target_user_uid)
+    target_user = get_object_or_404(User.objects.select_related('community'), uid=target_user_uid)
     
     # Check if slot is already assigned
     if slot.assignee and not force:
@@ -989,6 +1019,12 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
             'assignee': {
                 'uid': str(target_user.uid),
                 'nickname': target_user.nickname,
+                'community': {
+                    'uid': str(target_user.community.uid),
+                    'name': target_user.community.name,
+                    'tag': target_user.community.tag,
+                    'slug': target_user.community.slug,
+                } if target_user.community else None
             },
             'registrationUid': str(registration.uid)
         }
