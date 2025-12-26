@@ -724,10 +724,28 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
 def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistrationCreateSchema):
     """Register the authenticated user for a mission slot"""
     user_uid = request.auth.get('user', {}).get('uid')
-    user = get_object_or_404(User, uid=user_uid)
+    user = get_object_or_404(User.objects.select_related('community'), uid=user_uid)
     
     mission = get_object_or_404(Mission, slug=slug)
-    slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
+    slot = get_object_or_404(MissionSlot.objects.select_related('slot_group', 'restricted_community', 'slot_group__restricted_community'), uid=slot_uid, slot_group__mission=mission)
+    
+    # Check if slot is blocked
+    if slot.blocked:
+        return 403, {'detail': 'This slot is blocked and cannot be registered for'}
+    
+    # Check if slot is already assigned
+    if slot.assignee:
+        return 400, {'detail': 'This slot is already assigned'}
+    
+    # Check slot-level restricted community
+    if slot.restricted_community:
+        if not user.community or str(user.community.uid) != str(slot.restricted_community.uid):
+            return 403, {'detail': f'This slot is restricted to [{slot.restricted_community.tag}] {slot.restricted_community.name}'}
+    
+    # Check slot group-level restricted community
+    if slot.slot_group.restricted_community:
+        if not user.community or str(user.community.uid) != str(slot.slot_group.restricted_community.uid):
+            return 403, {'detail': f'This slot group is restricted to [{slot.slot_group.restricted_community.tag}] {slot.slot_group.restricted_community.name}'}
     
     # Check if user is already registered
     existing = MissionSlotRegistration.objects.filter(user=user, slot=slot).first()
@@ -921,14 +939,14 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
     permissions = request.auth.get('permissions', [])
     
     mission = get_object_or_404(Mission, slug=slug)
-    slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
+    slot = get_object_or_404(MissionSlot.objects.select_related('slot_group', 'restricted_community', 'slot_group__restricted_community'), uid=slot_uid, slot_group__mission=mission)
     
     # Get target user from payload
     target_user_uid = payload.userUid
     force = payload.force
     suppress_notifications = payload.suppressNotifications
     
-    target_user = get_object_or_404(User, uid=target_user_uid)
+    target_user = get_object_or_404(User.objects.select_related('community'), uid=target_user_uid)
     
     # Check if slot is already assigned
     if slot.assignee and not force:
@@ -949,7 +967,13 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
     if slot.restricted_community:
         if not target_user.community or str(target_user.community.uid) != str(slot.restricted_community.uid):
             if not is_creator and not is_admin:
-                return 403, {'detail': 'This slot is restricted to a specific community'}
+                return 403, {'detail': f'This slot is restricted to [{slot.restricted_community.tag}] {slot.restricted_community.name}'}
+    
+    # Community slot group restrictions
+    if slot.slot_group.restricted_community:
+        if not target_user.community or str(target_user.community.uid) != str(slot.slot_group.restricted_community.uid):
+            if not is_creator and not is_admin:
+                return 403, {'detail': f'This slot group is restricted to [{slot.slot_group.restricted_community.tag}] {slot.slot_group.restricted_community.name}'}
     
     # Only mission creator or admin can assign other users
     if not is_self_assignment and not is_creator and not is_admin:
