@@ -162,6 +162,7 @@ class MissionCreateSchema(Schema):
     visibility: str = 'hidden'
     tech_teleport: bool = Field(False, alias='techTeleport')
     tech_respawn: bool = Field(False, alias='techRespawn')
+    tech_support: Optional[str] = Field(None, alias='techSupport')
     details_map: Optional[str] = Field(None, alias='detailsMap')
     details_game_mode: Optional[str] = Field(None, alias='detailsGameMode')
     required_dlcs: Optional[List[str]] = Field(None, alias='requiredDLCs')

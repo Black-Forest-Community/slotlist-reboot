@@ -225,13 +225,17 @@ def create_mission(request, payload: MissionCreateSchema):
     # Use provided slug or generate from title
     slug = payload.slug if payload.slug else slugify(payload.title)
     
-    # Convert tech_teleport and tech_respawn to tech_support string
-    tech_support_parts = []
-    if payload.tech_teleport:
-        tech_support_parts.append('teleport')
-    if payload.tech_respawn:
-        tech_support_parts.append('respawn')
-    tech_support = ', '.join(tech_support_parts) if tech_support_parts else None
+    # Handle tech_support - prefer direct value from payload, otherwise build from booleans
+    if payload.tech_support is not None:
+        tech_support = payload.tech_support
+    else:
+        # Convert tech_teleport and tech_respawn to tech_support string
+        tech_support_parts = []
+        if payload.tech_teleport:
+            tech_support_parts.append('teleport')
+        if payload.tech_respawn:
+            tech_support_parts.append('respawn')
+        tech_support = ', '.join(tech_support_parts) if tech_support_parts else None
     
     # Use default datetime for required fields if not provided
     from datetime import datetime, timezone
