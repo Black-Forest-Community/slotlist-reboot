@@ -251,56 +251,6 @@ class StatusResponseSchema(Schema):
     version: str
 
 
-# Mission import schemas
-class MissionImportRequestSchema(Schema):
-    slug: str = Field(..., description="Mission slug to import from slotlist.info")
-    creator_uid: Optional[UUID] = Field(None, description="Optional UUID of the user to set as mission creator. If not provided, uses original creator from API.")
-    dry_run: bool = Field(False, description="Preview import without saving")
-
-
-class MissionImportPreviewSlotSchema(Schema):
-    title: str
-    assignee: str
-
-
-class MissionImportPreviewSlotGroupSchema(Schema):
-    title: str
-    slot_count: int
-    slots: List[MissionImportPreviewSlotSchema]
-
-
-class MissionImportPreviewMissionSchema(Schema):
-    title: str
-    slug: str
-    description: str
-    visibility: str
-    community: dict
-
-
-class MissionImportPreviewSchema(Schema):
-    mission: MissionImportPreviewMissionSchema
-    slot_groups: List[MissionImportPreviewSlotGroupSchema]
-    totals: dict
-
-
-class MissionImportSuccessSchema(Schema):
-    success: bool
-    message: str
-    mission_uid: UUID
-    mission_slug: str
-    mission_title: str
-
-
-class MissionImportResponseSchema(Schema):
-    """Response can be either preview or success"""
-    preview: Optional[MissionImportPreviewSchema] = None
-    success: Optional[bool] = None
-    message: Optional[str] = None
-    mission_uid: Optional[UUID] = None
-    mission_slug: Optional[str] = None
-    mission_title: Optional[str] = None
-
-
 class MissionSlotGroupCreateSchema(Schema):
     title: str
     description: Optional[str] = None

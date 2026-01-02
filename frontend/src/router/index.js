@@ -9,7 +9,6 @@ import CommunityCreator from '../views/CommunityCreator'
 import MissionList from '../views/MissionList'
 import MissionDetails from '../views/MissionDetails'
 import MissionCreator from '../views/MissionCreator'
-import MissionImport from '../views/MissionImport'
 import MissionSlotTemplateList from '../views/MissionSlotTemplateList'
 import MissionSlotTemplateDetails from '../views/MissionSlotTemplateDetails'
 import MissionSlotTemplateCreator from '../views/MissionSlotTemplateCreator'
@@ -73,11 +72,6 @@ export const router = new Router({
       meta: {
         authenticated: true // only logged in users can access this page
       }
-    },
-    {
-      path: '/import',
-      name: 'missionImport',
-      component: MissionImport
     },
     {
       path: '/mission-slot-templates',
