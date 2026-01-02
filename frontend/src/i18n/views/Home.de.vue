@@ -1,5 +1,5 @@
 <template>
   <b-jumbotron header="Slotlist Reboot Project" lead="In Arbeit...">
-    Der Nachfolger von slotlist.info ganz nah Original. Open Source Rules!
+    Ein weiteres Arma Slotlist Tool. <router-link to="/about">Meldet</router-link> euch wenn ihr dabei sein wollt!
   </b-jumbotron>
 </template>

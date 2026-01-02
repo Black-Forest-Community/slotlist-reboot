@@ -56,19 +56,6 @@ Generally speaking, slotlist-frontend can be deployed anywhere running a webserv
 
 Please be advised that some configuration values might need modifications should you plan to run your own instance since they have been tailored to work for [slotlist.online](https://slotlist.online)'s main instance. This is especially relevant for the CSP/HPKP headers set - failing to set these properly will result in problems loading your site.
 
-## Contributing
-Pull requests are more than welcome - I am grateful for any help, no matter how small it is! For major changes, please open an issue first so proposed modifications can be discussed first.
-
-All pull requests should be submitted to the `dev` branch - once a feature is fully implemented and tested, it will be merged to the `master` branch and deployed.  
-Attributions will be provided in the [Contributors](docs/Contributors.md) file inside the `docs/` folder as appropriate.
-
-In additional to development work for the backend or frontend projects, [slotlist.online](https://slotlist.online) also needs your help in providing accurate and complete translations. We are utilising [OneSky](https://morpheusxaut.oneskyapp.com/collaboration/project/133324) to crowd-source our translations and provide an easy interface to manage required strings. Feel free to contribute any translations or suggest a new language by opening an issue on the [slotlist-frontend repository](https://github.com/MorpheusXAUT/slotlist-frontend/issues).
-
-## Versioning
-slotlist-frontend uses [Semantic Versioning](https://semver.org/) for releases, every deployment will be tagged with a new, appropriate version - old releases can be found on GitHub's [release tab](https://github.com/MorpheusXAUT/slotlist-frontend/releases).
-
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
 
-## See Also
-[slotlist-backend](hhttps://github.com/Black-Forest-Community/slotlist-reboot), the backend portion of [slotlist.online](https://slotlist.online), written in TypeScript

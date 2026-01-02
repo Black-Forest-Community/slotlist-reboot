@@ -93,8 +93,8 @@
             <td>USA (Adequacy Decision)</td>
           </tr>
           <tr>
-            <td><a href="https://cloud.google.com">Google Cloud Platform</a></td>
-            <td>Hosting (Frankfurt)</td>
+            <td><a href="https://hetzner.com">Hetzner Online GmbH</a></td>
+            <td>Hosting</td>
             <td>EU</td>
           </tr>
         </tbody>
