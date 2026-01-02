@@ -20,7 +20,6 @@ import Login from '../views/Login'
 import About from '../views/About'
 import Imprint from '../views/Imprint'
 import Privacy from '../views/Privacy'
-import Api from '../views/Api'
 
 Vue.use(Router)
 
@@ -145,11 +144,6 @@ export const router = new Router({
       name: 'privacy',
       component: Privacy
     },
-    {
-      path: '/api',
-      name: 'api',
-      component: Api
-    }
   ],
   linkExactActiveClass: 'active'
 })
