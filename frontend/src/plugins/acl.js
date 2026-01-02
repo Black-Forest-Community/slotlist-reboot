@@ -64,14 +64,16 @@ class ACL {
     router.beforeEach((to, from, next) => {
       if (_.isObject(to.meta)) {
         if (to.meta.authenticated === true && !this.authenticated) {
-          return next(false)
+          // Redirect to login instead of just blocking
+          return next({ name: 'login', query: { redirect: to.fullPath } })
         }
 
         if (!_.isNil(to.meta.permissions)) {
           const strict = _.isBoolean(to.meta.strictPermissions) ? to.meta.strictPermissions : false
 
           if (!this.can(to.meta.permissions, strict)) {
-            return next(false)
+            // Redirect to home instead of just blocking
+            return next({ name: 'home' })
           }
         }
       }

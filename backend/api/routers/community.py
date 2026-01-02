@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
 from api.models import Community
 from api.schemas import CommunityCreateSchema, CommunityUpdateSchema, CommunityApplicationStatusSchema, CommunityPermissionCreateSchema
-from api.auth import has_permission
+from api.auth import has_permission, has_approved_community, RequiresCommunityMembership
 
 router = Router()
 
@@ -47,34 +47,58 @@ def list_communities(request, limit: int = 25, offset: int = 0):
 def get_community(request, slug: str):
     """Get a single community by slug"""
     community = get_object_or_404(Community, slug=slug)
-    
-    # Get members and leaders
+
+    # Check if user is authenticated and has community
+    is_authenticated_with_community = False
+    if hasattr(request, 'auth') and request.auth:
+        user_uid = request.auth.get('user', {}).get('uid')
+        if user_uid:
+            has_community, _ = has_approved_community(user_uid)
+            is_authenticated_with_community = has_community
+
+    # If not authenticated with community, return basic info only
+    if not is_authenticated_with_community:
+        return {
+            'community': {
+                'uid': community.uid,
+                'name': community.name,
+                'tag': community.tag,
+                'slug': community.slug,
+                'website': community.website,
+                'logoUrl': community.logo_url,
+                # Don't include members, leaders, or detailed resources
+                'members': [],
+                'leaders': []
+            }
+        }
+
+    # Get members and leaders (full data for authenticated users with community)
     from api.models import User, Permission
-    
+
     members = []
     leaders = []
-    
+
     # Get all users in this community
     community_users = User.objects.filter(community=community).select_related('community')
-    
+
     for user in community_users:
         user_data = {
             'uid': user.uid,
             'nickname': user.nickname,
             'steamId': user.steam_id,
         }
-        
+
         # Check if user is a leader (has community.{slug}.leader permission)
         is_leader = Permission.objects.filter(
             user=user,
             permission=f'community.{slug}.leader'
         ).exists()
-        
+
         if is_leader:
             leaders.append(user_data)
         else:
             members.append(user_data)
-    
+
     return {
         'community': {
             'uid': community.uid,
@@ -208,7 +232,7 @@ def delete_community(request, slug: str):
     return {'success': True}
 
 
-@router.get('/{slug}/missions', auth=None)
+@router.get('/{slug}/missions', auth=RequiresCommunityMembership())
 def get_community_missions(request, slug: str, limit: int = 10, offset: int = 0, includeEnded: bool = False):
     """Get missions for a community"""
     from api.models import Mission
@@ -254,7 +278,7 @@ def get_community_missions(request, slug: str, limit: int = 10, offset: int = 0,
     }
 
 
-@router.get('/{slug}/permissions', auth=None)
+@router.get('/{slug}/permissions', auth=RequiresCommunityMembership())
 def get_community_permissions(request, slug: str, limit: int = 10, offset: int = 0):
     """Get permissions for a community"""
     from api.models import Permission, User
@@ -285,7 +309,7 @@ def get_community_permissions(request, slug: str, limit: int = 10, offset: int =
     }
 
 
-@router.get('/{slug}/repositories', auth=None)
+@router.get('/{slug}/repositories', auth=RequiresCommunityMembership())
 def get_community_repositories(request, slug: str):
     """Get repositories for a community"""
     community = get_object_or_404(Community, slug=slug)
@@ -295,7 +319,7 @@ def get_community_repositories(request, slug: str):
     }
 
 
-@router.get('/{slug}/servers', auth=None)
+@router.get('/{slug}/servers', auth=RequiresCommunityMembership())
 def get_community_servers(request, slug: str):
     """Get servers for a community"""
     community = get_object_or_404(Community, slug=slug)

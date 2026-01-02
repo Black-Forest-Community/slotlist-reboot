@@ -12,12 +12,12 @@
               <i class="fa fa-home" aria-hidden="true"></i> {{ $t('nav.home') }}
             </router-link>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="loggedIn && user && user.community">
             <router-link class="nav-link" :to="{name:'missionList'}" @click.native="closeNavbar">
               <i class="fa fa-tasks" aria-hidden="true"></i> {{ $t('nav.missions') }}
             </router-link>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="loggedIn && user && user.community">
             <router-link class="nav-link" :to="{name:'missionSlotTemplateList'}" @click.native="closeNavbar">
               <i class="fa fa-file-text-o" aria-hidden="true"></i> {{ $t('nav.missionSlotTemplates') }}
             </router-link>
@@ -27,7 +27,7 @@
               <i class="fa fa-users" aria-hidden="true"></i> {{ $t('nav.communities') }}
             </router-link>
           </li>
-          <li class="nav-item" v-if="loggedIn">
+          <li class="nav-item" v-if="loggedIn && user && user.community">
             <router-link class="nav-link" :to="{name:'userList'}" @click.native="closeNavbar">
               <i class="fa fa-user" aria-hidden="true"></i> {{ $t('nav.users') }}
             </router-link>
@@ -210,6 +210,9 @@ export default {
     },
     loggedIn() {
       return this.$store.getters.loggedIn
+    },
+    user() {
+      return this.$store.getters.user
     },
     selectedLanguage() {
       const locale = this.$i18n.locale

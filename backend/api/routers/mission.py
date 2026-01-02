@@ -14,7 +14,7 @@ from api.schemas import (
     MissionBannerImageSchema, MissionSlotAssignSchema,
     MissionPermissionCreateSchema
 )
-from api.auth import has_permission
+from api.auth import has_permission, RequiresCommunityMembership
 from api.permissions import can_view_mission, filter_missions_by_visibility
 
 router = Router()
@@ -51,7 +51,7 @@ def validate_dlc_list(dlc_list, field_name='required_dlcs'):
         raise HttpError(400, f'Invalid {field_name}: {", ".join(invalid_dlcs)}. Valid options: {", ".join(ArmaThreeDLC.get_valid_dlcs())}')
 
 
-@router.get('/', auth=None)
+@router.get('/', auth=RequiresCommunityMembership())
 def list_missions(request, limit: int = 25, offset: int = 0, includeEnded: bool = False, startDate: int = None, endDate: int = None):
     """List all missions with pagination"""
     query = Mission.objects.select_related('creator', 'community').all()
@@ -173,7 +173,7 @@ def check_slug_availability(request, slug: str):
     }
 
 
-@router.get('/{slug}', auth=None)
+@router.get('/{slug}', auth=RequiresCommunityMembership())
 def get_mission(request, slug: str):
     """Get a single mission by slug"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
@@ -607,7 +607,7 @@ def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
 
 
 
-@router.get('/{slug}/slots', auth=None)
+@router.get('/{slug}/slots', auth=RequiresCommunityMembership())
 def get_mission_slots(request, slug: str):
     """Get all slots for a mission organized by slot groups"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
@@ -698,7 +698,7 @@ class SlotRegistrationUpdateSchema(BaseModel):
     suppressNotifications: Optional[bool] = False
 
 
-@router.get('/{slug}/slots/{slot_uid}/registrations', auth=None)
+@router.get('/{slug}/slots/{slot_uid}/registrations', auth=RequiresCommunityMembership())
 def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, offset: int = 0):
     """Get all registrations for a specific mission slot"""
     mission = get_object_or_404(Mission, slug=slug)
