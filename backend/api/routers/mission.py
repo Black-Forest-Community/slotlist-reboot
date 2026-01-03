@@ -14,10 +14,29 @@ from api.schemas import (
     MissionBannerImageSchema, MissionSlotAssignSchema,
     MissionPermissionCreateSchema
 )
-from api.auth import has_permission, generate_jwt
+from api.auth import has_permission, RequiresCommunityMembership
 from api.permissions import can_view_mission, filter_missions_by_visibility
 
 router = Router()
+
+
+def can_edit_mission(mission, user_uid, permissions):
+    """
+    Check if user can edit a mission (creator, editor, or admin).
+    
+    Args:
+        mission: Mission instance
+        user_uid: UUID of the current user
+        permissions: List of permission strings
+        
+    Returns:
+        bool: True if user can edit the mission
+    """
+    is_creator = str(mission.creator.uid) == str(user_uid)
+    is_admin = has_permission(permissions, 'admin.mission')
+    is_editor = has_permission(permissions, f'mission.{mission.slug}.editor')
+    
+    return is_creator or is_admin or is_editor
 
 
 def validate_dlc_list(dlc_list, field_name='required_dlcs'):
@@ -32,7 +51,7 @@ def validate_dlc_list(dlc_list, field_name='required_dlcs'):
         raise HttpError(400, f'Invalid {field_name}: {", ".join(invalid_dlcs)}. Valid options: {", ".join(ArmaThreeDLC.get_valid_dlcs())}')
 
 
-@router.get('/', auth=None)
+@router.get('/', auth=RequiresCommunityMembership())
 def list_missions(request, limit: int = 25, offset: int = 0, includeEnded: bool = False, startDate: int = None, endDate: int = None):
     """List all missions with pagination"""
     query = Mission.objects.select_related('creator', 'community').all()
@@ -154,7 +173,7 @@ def check_slug_availability(request, slug: str):
     }
 
 
-@router.get('/{slug}', auth=None)
+@router.get('/{slug}', auth=RequiresCommunityMembership())
 def get_mission(request, slug: str):
     """Get a single mission by slug"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
@@ -264,12 +283,20 @@ def create_mission(request, payload: MissionCreateSchema):
         creator=user,
         community=community
     )
-    
-    # Generate a new JWT token with the creator permission for this mission
+
+    # Create editor permission for the creator (for JWT refresh compatibility)
+    from api.models import Permission
+    Permission.objects.create(
+        user=user,
+        permission=f'mission.{slug}.editor'
+    )
+
+    # Regenerate JWT token with new permissions
+    from api.auth import generate_jwt
     new_token = generate_jwt(user)
-    
+
     return {
-        'token': new_token,  # Return updated token with mission.{slug}.creator permission
+        'token': new_token,
         'mission': {
             'uid': mission.uid,
             'slug': mission.slug,
@@ -322,10 +349,7 @@ def update_mission(request, slug: str, payload: MissionUpdateSchema):
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         return 403, {'detail': 'Forbidden'}
     
     # Validate DLCs if provided
@@ -439,7 +463,7 @@ def delete_mission(request, slug: str):
     """Delete a mission"""
     mission = get_object_or_404(Mission, slug=slug)
     
-    # Check permissions
+    # Check permissions - only creator or admin can delete (not editors)
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
@@ -544,12 +568,13 @@ def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
                     # Note: Not copying assignee or external_assignee - duplicated mission starts with empty slots
                 )
     
-    # Generate a new JWT token with the creator permission for this mission
-    new_token = generate_jwt(user)
+    # Return token for backwards compatibility with frontend
+    # (no need to regenerate since creator status is checked via mission.creator.uid)
+    current_token = request.headers.get('Authorization', '').replace('Bearer ', '')
     
     # Return the new mission details
     return {
-        'token': new_token,
+        'token': current_token,
         'mission': {
             'uid': new_mission.uid,
             'slug': new_mission.slug,
@@ -594,7 +619,7 @@ def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
 
 
 
-@router.get('/{slug}/slots', auth=None)
+@router.get('/{slug}/slots', auth=RequiresCommunityMembership())
 def get_mission_slots(request, slug: str):
     """Get all slots for a mission organized by slot groups"""
     mission = get_object_or_404(Mission.objects.select_related('creator', 'community'), slug=slug)
@@ -698,7 +723,7 @@ class SlotRegistrationUpdateSchema(BaseModel):
     suppressNotifications: Optional[bool] = False
 
 
-@router.get('/{slug}/slots/{slot_uid}/registrations', auth=None)
+@router.get('/{slug}/slots/{slot_uid}/registrations', auth=RequiresCommunityMembership())
 def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, offset: int = 0):
     """Get all registrations for a specific mission slot"""
     mission = get_object_or_404(Mission, slug=slug)
@@ -835,11 +860,12 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
     registration = get_object_or_404(MissionSlotRegistration.objects.select_related('user__community'), uid=registration_uid, slot=slot)
 
     
-    # Check permissions - user must be mission creator or have appropriate permissions
+    # Check permissions - user must be mission creator, editor, or have appropriate permissions
     is_creator = str(mission.creator.uid) == str(user.uid)
+    is_editor = has_permission(permissions, f'mission.{mission.slug}.editor')
     has_perm = has_permission(permissions, ['mission.slot.assign', 'admin.*'])
     
-    if not is_creator and not has_perm:
+    if not is_creator and not is_editor and not has_perm:
         return 403, {'detail': 'Insufficient permissions to update registration'}
     
     # If confirmed, assign the slot to the user and mark registration as confirmed
@@ -990,9 +1016,10 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
     if slot.blocked:
         return 400, {'detail': 'Slot is blocked and cannot be assigned'}
     
-    # Check permissions - mission creator or admin can assign anyone
+    # Check permissions - mission creator, editor, or admin can assign anyone
     is_creator = str(mission.creator.uid) == str(current_user_uid)
     is_admin = has_permission(permissions, 'admin.mission')
+    is_editor = has_permission(permissions, f'mission.{mission.slug}.editor')
     
     # Check if user is assigning themselves
     is_self_assignment = str(target_user_uid) == str(current_user_uid)
@@ -1000,7 +1027,7 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
     # Community slot restrictions
     if slot.restricted_community:
         if not target_user.community or str(target_user.community.uid) != str(slot.restricted_community.uid):
-            if not is_creator and not is_admin:
+            if not is_creator and not is_admin and not is_editor:
                 return 403, {'detail': f'This slot is restricted to [{slot.restricted_community.tag}] {slot.restricted_community.name}'}
     
     # Community slot group restrictions
@@ -1009,8 +1036,8 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
             if not is_creator and not is_admin:
                 return 403, {'detail': f'This slot group is restricted to [{slot.slot_group.restricted_community.tag}] {slot.slot_group.restricted_community.name}'}
     
-    # Only mission creator or admin can assign other users
-    if not is_self_assignment and not is_creator and not is_admin:
+    # Only mission creator, editor, or admin can assign other users
+    if not is_self_assignment and not is_creator and not is_admin and not is_editor:
         return 403, {'detail': 'Insufficient permissions to assign other users to slots'}
     
     # Remove any existing registrations for this slot by the target user
@@ -1080,12 +1107,13 @@ def unassign_slot(request, slug: str, slot_uid: UUID):
     if not slot.assignee:
         return 400, {'detail': 'Slot is not assigned'}
     
-    # Check permissions - user must be the assignee, mission creator, or have appropriate permissions
+    # Check permissions - user must be the assignee, mission creator, editor, or have appropriate permissions
     is_assignee = str(slot.assignee.uid) == str(user.uid)
     is_creator = str(mission.creator.uid) == str(user.uid)
+    is_editor = has_permission(permissions, f'mission.{mission.slug}.editor')
     has_perm = has_permission(permissions, ['mission.slot.assign', 'admin.*'])
     
-    if not is_assignee and not is_creator and not has_perm:
+    if not is_assignee and not is_creator and not is_editor and not has_perm:
         return 403, {'detail': 'Insufficient permissions to unassign this slot'}
     
     # Remove any confirmed registrations when unassigning
@@ -1112,10 +1140,7 @@ def create_mission_slot_group(request, slug: str, data: MissionSlotGroupCreateSc
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to create slot groups for this mission')
     
@@ -1171,10 +1196,7 @@ def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: Mi
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to update slot groups for this mission')
     
@@ -1244,10 +1266,7 @@ def delete_mission_slot_group(request, slug: str, slot_group_uid: UUID):
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to delete slot groups for this mission')
     
@@ -1275,10 +1294,7 @@ def create_mission_slots(request, slug: str, data: List[MissionSlotCreateSchema]
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to create slots for this mission')
     
@@ -1354,10 +1370,7 @@ def update_mission_slot(request, slug: str, slot_uid: UUID, data: MissionSlotUpd
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to update slots for this mission')
     
@@ -1447,10 +1460,7 @@ def delete_mission_slot(request, slug: str, slot_uid: UUID):
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         from ninja.errors import HttpError
         raise HttpError(403, 'Insufficient permissions to delete slots for this mission')
     
@@ -1484,10 +1494,7 @@ def upload_mission_banner_image(request, slug: str, payload: MissionBannerImageS
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         return 403, {'detail': 'Insufficient permissions to upload banner for this mission'}
     
     try:
@@ -1542,10 +1549,7 @@ def delete_mission_banner_image(request, slug: str):
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == user_uid
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         return 403, {'detail': 'Insufficient permissions to delete banner for this mission'}
     
     # Delete file if it exists
@@ -1575,14 +1579,11 @@ def get_mission_permissions(request, slug: str, limit: int = 10, offset: int = 0
     
     mission = get_object_or_404(Mission, slug=slug)
     
-    # Check permissions - mission creator or admin can view
+    # Check permissions - mission creator, editor, or admin can view
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
-    is_creator = str(mission.creator.uid) == str(user_uid)
-    is_admin = has_permission(permissions, 'admin.mission')
-    
-    if not is_creator and not is_admin:
+    if not can_edit_mission(mission, user_uid, permissions):
         return 403, {'detail': 'Insufficient permissions to view mission permissions'}
     
     # Get all permissions for this mission
@@ -1616,6 +1617,7 @@ def create_mission_permission(request, slug: str, payload: MissionPermissionCrea
     mission = get_object_or_404(Mission, slug=slug)
     
     # Check permissions - only mission creator or admin
+    # Check permissions - only mission creator or admin can grant permissions (not editors)
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     
@@ -1679,7 +1681,7 @@ def delete_mission_permission(request, slug: str, permission_uid: UUID):
     
     mission = get_object_or_404(Mission, slug=slug)
     
-    # Check permissions - only mission creator or admin
+    # Check permissions - only mission creator or admin can revoke permissions (not editors)
     user_uid = request.auth.get('user', {}).get('uid')
     permissions = request.auth.get('permissions', [])
     

@@ -4,12 +4,12 @@ from typing import List
 from uuid import UUID
 from api.models import User, Permission
 from api.schemas import UserUpdateSchema, PermissionSchema
-from api.auth import has_permission
+from api.auth import has_permission, RequiresCommunityMembership
 
 router = Router()
 
 
-@router.get('/')
+@router.get('/', auth=RequiresCommunityMembership())
 def list_users(request, limit: int = 25, offset: int = 0, search: str = None):
     """List all users with pagination"""
     queryset = User.objects.select_related('community').all()
@@ -51,7 +51,7 @@ def list_users(request, limit: int = 25, offset: int = 0, search: str = None):
     }
 
 
-@router.get('/{user_uid}')
+@router.get('/{user_uid}', auth=RequiresCommunityMembership())
 def get_user(request, user_uid: UUID):
     """Get a single user by UID"""
     from api.models import Mission

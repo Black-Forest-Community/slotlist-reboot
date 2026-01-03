@@ -422,6 +422,27 @@ class CommunityApplication(models.Model):
     def __str__(self):
         return f"{self.user.nickname} -> {self.community.name} ({self.status})"
 
+    def save(self, *args, **kwargs):
+        """Override save to automatically assign user to community when approved"""
+        # Check if this is an update and status is being changed to approved
+        if self.pk:
+            # Get the old instance to check previous status
+            try:
+                old_instance = CommunityApplication.objects.get(pk=self.pk)
+                old_status = old_instance.status
+            except CommunityApplication.DoesNotExist:
+                old_status = None
+        else:
+            old_status = None
+
+        # Save the application first
+        super().save(*args, **kwargs)
+
+        # If status changed to approved, assign user to community
+        if self.status == 'approved' and old_status != 'approved':
+            self.user.community = self.community
+            self.user.save(update_fields=['community'])
+
 
 class Notification(models.Model):
     """Represents a notification for a user"""
