@@ -252,3 +252,97 @@ class GatedAccessTestCase(TestCase):
         )
         # Should get 404 if no application exists, but endpoint should be accessible
         self.assertIn(response.status_code, [200, 404])
+
+    def test_mission_detail_requires_community(self):
+        """Test mission detail endpoint requires community membership"""
+        from api.models import Mission
+        from datetime import datetime, timezone
+
+        # Create a test mission
+        mission = Mission.objects.create(
+            slug='test-mission',
+            title='Test Mission',
+            creator=self.user_with_community,
+            community=self.community,
+            visibility='public',
+            start_time=datetime.now(timezone.utc)
+        )
+
+        # Test without authentication
+        response = self.client.get(f'/api/v1/missions/{mission.slug}/')
+        self.assertEqual(response.status_code, 401)
+
+        # Test with community member
+        token = generate_jwt(self.user_with_community)
+        response = self.client.get(
+            f'/api/v1/missions/{mission.slug}/',
+            HTTP_AUTHORIZATION=f'Bearer {token}'
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Test without community
+        token = generate_jwt(self.user_without_community)
+        response = self.client.get(
+            f'/api/v1/missions/{mission.slug}/',
+            HTTP_AUTHORIZATION=f'Bearer {token}'
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_mission_slots_requires_community(self):
+        """Test mission slots endpoint requires community membership"""
+        from api.models import Mission
+        from datetime import datetime, timezone
+
+        # Create a test mission
+        mission = Mission.objects.create(
+            slug='test-mission-slots',
+            title='Test Mission Slots',
+            creator=self.user_with_community,
+            community=self.community,
+            visibility='public',
+            start_time=datetime.now(timezone.utc)
+        )
+
+        # Test without authentication
+        response = self.client.get(f'/api/v1/missions/{mission.slug}/slots/')
+        self.assertEqual(response.status_code, 401)
+
+        # Test with community member
+        token = generate_jwt(self.user_with_community)
+        response = self.client.get(
+            f'/api/v1/missions/{mission.slug}/slots/',
+            HTTP_AUTHORIZATION=f'Bearer {token}'
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Test without community
+        token = generate_jwt(self.user_without_community)
+        response = self.client.get(
+            f'/api/v1/missions/{mission.slug}/slots/',
+            HTTP_AUTHORIZATION=f'Bearer {token}'
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_user_detail_requires_community(self):
+        """Test user detail endpoint requires community membership"""
+        # Test without authentication
+        response = self.client.get(
+            f'/api/v1/users/{self.user_with_community.uid}/'
+        )
+        self.assertEqual(response.status_code, 401)
+
+        # Test with community member
+        token = generate_jwt(self.user_with_community)
+        response = self.client.get(
+            f'/api/v1/users/{self.user_with_community.uid}/',
+            HTTP_AUTHORIZATION=f'Bearer {token}'
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Test without community
+        token = generate_jwt(self.user_without_community)
+        response = self.client.get(
+            f'/api/v1/users/{self.user_with_community.uid}/',
+            HTTP_AUTHORIZATION=f'Bearer {token}'
+        )
+        self.assertEqual(response.status_code, 401)
