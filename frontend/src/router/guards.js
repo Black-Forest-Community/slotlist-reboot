@@ -28,7 +28,9 @@ export function requireCommunity(to, from, next) {
   const user = store.getters.user
 
   // If user has no community, redirect to community application gate
+  // Store redirect so they can be sent here after community approval
   if (!user || !user.community) {
+    store.dispatch('setRedirect', { path: to.fullPath })
     next({ name: 'communityApplicationGate' })
   } else {
     next()

@@ -143,7 +143,10 @@ export const router = new Router({
       component: Login,
       beforeEnter: (to, from, next) => {
         // Set path of previous route before accessing login route, used for redirects after successful authentication
-        store.dispatch('setRedirect', { path: from.path })
+        // Only set if coming from a real route (not the initial navigation) and not already set by guards
+        if (from.name && from.path !== '/login') {
+          store.dispatch('setRedirect', { path: from.fullPath })
+        }
         next()
       }
     },

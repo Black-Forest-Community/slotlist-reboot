@@ -64,8 +64,12 @@ class ACL {
     router.beforeEach((to, from, next) => {
       if (_.isObject(to.meta)) {
         if (to.meta.authenticated === true && !this.authenticated) {
-          // Redirect to login instead of just blocking
-          return next({ name: 'login', query: { redirect: to.fullPath } })
+          // Store redirect path in localStorage for post-login redirect
+          // Import store dynamically to avoid circular dependency
+          const store = require('../store').default
+          store.dispatch('setRedirect', { path: to.fullPath })
+          // Redirect to login
+          return next({ name: 'login' })
         }
 
         if (!_.isNil(to.meta.permissions)) {

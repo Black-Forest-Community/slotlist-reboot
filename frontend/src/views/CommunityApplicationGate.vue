@@ -82,8 +82,13 @@ export default {
 
         // If user now has community, redirect to original destination
         if (user && user.community) {
-          const redirectPath = this.$store.state.auth.redirect || '/missions'
-          this.$router.push(redirectPath)
+          const redirect = this.$ls.get('auth-redirect')
+          if (redirect) {
+            this.$ls.remove('auth-redirect')
+            this.$router.push(redirect)
+          } else {
+            this.$router.push({ path: '/missions' })
+          }
           return
         }
 
