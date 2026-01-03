@@ -85,9 +85,15 @@ export default {
       return moment(timestamp).tz(this.timezone).format('HH:mm')
     },
     loadAgendaMissions() {
-      this.$store.dispatch('getMissionsForAgenda', {
-        autoRefresh: true
-      })
+      // Only load missions if user has a community
+      const user = this.$store.getters.user
+      const hasCommunity = user && user.community
+
+      if (hasCommunity) {
+        this.$store.dispatch('getMissionsForAgenda', {
+          autoRefresh: true
+        })
+      }
     }
   }
 }

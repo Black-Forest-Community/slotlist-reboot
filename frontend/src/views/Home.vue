@@ -7,7 +7,8 @@
     <template v-else>
       <home-de v-if="$i18n.locale === 'de' || $i18n.locale === 'de-at'"></home-de>
       <home-en v-else></home-en>
-      <calendar></calendar>
+      <!-- Only show calendar if user has a community -->
+      <calendar v-if="user && user.community"></calendar>
     </template>
   </div>
 </template>
@@ -26,8 +27,18 @@ export default {
     HomeDe,
     HomeEn,
   },
+  computed: {
+    user() {
+      return this.$store.getters.user
+    }
+  },
   created: function() {
     utils.clearTitle()
+
+    // Redirect to community application gate if logged in but no community
+    if (this.$store.getters.loggedIn && (!this.user || !this.user.community)) {
+      this.$router.push({ name: 'communityApplicationGate' })
+    }
   }
 }
 </script>

@@ -85,7 +85,11 @@ export default {
 
       const endDate = moment(momentIterator.subtract(1, 'day').endOf('day'))
 
-      if ((_.isNil(this.$store.getters.missionsForCalendar) || _.isNil(this.$store.getters.missionsForCalendarRefreshSetInterval)) && !this.$store.getters.refreshingMissionsForCalendar) {
+      // Only load missions if user has a community
+      const user = this.$store.getters.user
+      const hasCommunity = user && user.community
+
+      if (hasCommunity && (_.isNil(this.$store.getters.missionsForCalendar) || _.isNil(this.$store.getters.missionsForCalendarRefreshSetInterval)) && !this.$store.getters.refreshingMissionsForCalendar) {
         this.$store.dispatch('getMissionsForCalendar', {
           autoRefresh: true,
           startDate,

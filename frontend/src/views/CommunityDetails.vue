@@ -183,20 +183,43 @@
           </click-confirm>
         </div>
       </div>
-      <div class="card">
-        <div class="card-block text-nowrap">
-          <h4 class="card-title">{{ $t('nav.missions') }}</h4>
-          <community-missions></community-missions>
+
+      <!-- Application section for non-members -->
+      <div class="card" v-if="loggedIn && !isCommunityMember && !hasPendingApplication">
+        <div class="card-block text-center">
+          <h4 class="card-title">{{ $t('community.join.title') }}</h4>
+          <p class="text-muted">{{ $t('community.join.description') }}</p>
+          <b-btn variant="primary" size="lg" @click="applyToCommunity">
+            <i class="fa fa-paper-plane" aria-hidden="true"></i> {{ $t('community.join.apply') }}
+          </b-btn>
         </div>
       </div>
-      <br>
-      <div class="card">
-        <div class="card-block text-nowrap">
-          <h4 class="card-title">{{ $t('community.members') }}</h4>
-          <community-members></community-members>
+
+      <!-- Pending application notice -->
+      <div class="card" v-if="loggedIn && !isCommunityMember && hasPendingApplication">
+        <div class="card-block text-center">
+          <h4 class="card-title">{{ $t('community.application.pending.title') }}</h4>
+          <p class="text-muted">{{ $t('community.application.pending.message') }}</p>
         </div>
       </div>
-      <br>
+
+      <!-- Missions and Members - only for community members -->
+      <div v-if="isCommunityMember">
+        <div class="card">
+          <div class="card-block text-nowrap">
+            <h4 class="card-title">{{ $t('nav.missions') }}</h4>
+            <community-missions></community-missions>
+          </div>
+        </div>
+        <br>
+        <div class="card">
+          <div class="card-block text-nowrap">
+            <h4 class="card-title">{{ $t('community.members') }}</h4>
+            <community-members></community-members>
+          </div>
+        </div>
+        <br>
+      </div>
       <div class="card" v-if="canEditCommunityMembers">
         <div class="card-block text-nowrap">
           <h4 class="card-title">{{ $t('community.applications') }}</h4>
@@ -367,6 +390,10 @@ export default {
 
       return user.community.slug === this.$route.params.communitySlug
     },
+    hasPendingApplication() {
+      const applicationStatus = this.$store.getters.communityApplicationStatus
+      return applicationStatus && applicationStatus.status === 'submitted'
+    },
     isCommunityRepositoryUrlValid() {
       // Taken from: https://stackoverflow.com/a/5717133 @ 2017-08-04 09:43
       const urlPattern = /^((https?|ftp):\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?(\/[-a-z\d%_.~+]*)*(\?[;&a-z\d%_.~+=-]*)?(\#[-a-z\d_]*)?$/i
@@ -382,6 +409,9 @@ export default {
     }
   },
   methods: {
+    applyToCommunity() {
+      this.$store.dispatch('applyToCommunity', this.$route.params.communitySlug)
+    },
     createCommunityRepository() {
       if (_.isEmpty(this.communityRepositoryCreateData.kind) || _.isEmpty(this.communityRepositoryCreateData.name)) {
         return

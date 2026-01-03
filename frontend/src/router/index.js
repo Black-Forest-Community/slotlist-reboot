@@ -48,7 +48,7 @@ export const router = new Router({
       path: '/communities/:communitySlug',
       name: 'communityDetails',
       component: CommunityDetails,
-      beforeEnter: requireCommunity,
+      beforeEnter: requireAuth,
       meta: {
         authenticated: true
       }

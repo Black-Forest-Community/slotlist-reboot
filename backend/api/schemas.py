@@ -340,7 +340,7 @@ class MissionSlotUpdateSchema(Schema):
 
 
 class CommunityApplicationStatusSchema(Schema):
-    status: str  # 'accepted' or 'denied'
+    status: str  # 'accepted' or 'denied' (accepted maps to 'approved' internally)
 
 
 class CommunityPermissionCreateSchema(Schema):

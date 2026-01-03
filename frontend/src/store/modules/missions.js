@@ -2207,14 +2207,17 @@ const actions = {
           missions: []
         })
 
-        if (error.response) {
+        // Don't show error alert for 401 (Unauthorized) - user is being redirected to community gate
+        const is401 = error.response && error.response.status === 401
+
+        if (error.response && !is401) {
           console.error('getMissionsForCalendar', error.response)
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
             alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getMissionsForCalendar.error')} - ${error.response.data.detail}`
           })
-        } else if (error.request) {
+        } else if (error.request && !is401) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'missions', function: 'getMissionsForCalendar' } }) : null
           console.error('getMissionsForCalendar', error.request)
           dispatch('showAlert', {
@@ -2222,7 +2225,7 @@ const actions = {
             alertVariant: 'danger',
             alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getMissionsForCalendar.error')} - ${i18n.t('failed.request')}`
           })
-        } else {
+        } else if (!is401) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'missions', function: 'getMissionsForCalendar' } }) : null
           console.error('getMissionsForCalendar', error.message)
           dispatch('showAlert', {
@@ -2291,14 +2294,17 @@ const actions = {
           missions: []
         })
 
-        if (error.response) {
+        // Don't show error alert for 401 (Unauthorized) - user is being redirected to community gate
+        const is401 = error.response && error.response.status === 401
+
+        if (error.response && !is401) {
           console.error('getMissionsForAgenda', error.response)
           dispatch('showAlert', {
             showAlert: true,
             alertVariant: 'danger',
             alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getMissionsForAgenda.error')} - ${error.response.data.detail}`
           })
-        } else if (error.request) {
+        } else if (error.request && !is401) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'missions', function: 'getMissionsForAgenda' } }) : null
           console.error('getMissionsForAgenda', error.request)
           dispatch('showAlert', {
@@ -2306,7 +2312,7 @@ const actions = {
             alertVariant: 'danger',
             alertMessage: `<i class="fa fa-bolt" aria-hidden="true"></i> ${i18n.t('store.getMissionsForAgenda.error')} - ${i18n.t('failed.request')}`
           })
-        } else {
+        } else if (!is401) {
           error.message !== "Network Error" ? Raven.captureException(error, { extra: { module: 'missions', function: 'getMissionsForAgenda' } }) : null
           console.error('getMissionsForAgenda', error.message)
           dispatch('showAlert', {

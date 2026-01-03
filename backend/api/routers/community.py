@@ -408,41 +408,41 @@ def get_community_applications(request, slug: str, limit: int = 10, offset: int 
     }
 
 
-@router.post('/{slug}/applications')
+@router.post('/{slug}/applications', response={200: dict, 400: dict, 401: dict})
 def create_community_application(request, slug: str):
     """Submit an application to join a community"""
     from api.models import CommunityApplication, User
-    
+
     # User must be authenticated
     if not request.auth:
         return 401, {'detail': 'Authentication required'}
-    
+
     community = get_object_or_404(Community, slug=slug)
     auth_user_uid = request.auth.get('user', {}).get('uid')
-    
+
     if not auth_user_uid:
         return 401, {'detail': 'Invalid authentication'}
-    
+
     # Get the user
     user = get_object_or_404(User, uid=auth_user_uid)
-    
+
     # Check if user already has an application for this community
     existing_app = CommunityApplication.objects.filter(
         user=user,
         community=community
     ).first()
-    
+
     if existing_app:
         return 400, {'message': 'You have already submitted an application to this community'}
-    
+
     # Create the application
     application = CommunityApplication.objects.create(
         user=user,
         community=community,
         status='submitted'
     )
-    
-    return {
+
+    return 200, {
         'status': application.status,
         'uid': str(application.uid)
     }
@@ -465,20 +465,17 @@ def process_community_application(request, slug: str, application_uid: str, payl
     # Get the application
     application = get_object_or_404(CommunityApplication, uid=application_uid, community=community)
     
-    # Get status from payload
-    new_status = payload.status
-    if new_status not in ['accepted', 'denied']:
+    # Get status from payload and map 'accepted' to 'approved' for backwards compatibility
+    requested_status = payload.status
+    if requested_status not in ['accepted', 'denied']:
         return 400, {'detail': 'status must be "accepted" or "denied"'}
-    
-    # Update application status
+
+    # Map 'accepted' to 'approved' to match model STATUS_CHOICES
+    new_status = 'approved' if requested_status == 'accepted' else 'denied'
+
+    # Update application status (model's save() method will handle community assignment)
     application.status = new_status
     application.save()
-    
-    # If accepted, add user to community
-    if new_status == 'accepted':
-        user = application.user
-        user.community = community
-        user.save()
     
     return {
         'application': {
