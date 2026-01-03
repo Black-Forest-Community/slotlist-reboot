@@ -120,6 +120,8 @@
   "community.logo.notSelected": "No logo selected",
   "community.member.confirm.remove": "Remove member?",
   "community.members": "Members",
+  "community.missions.past": "Past Missions",
+  "community.missions.future": "Future Missions",
   "community.modal.edit": "Edit community details",
   "community.modal.logo": "Edit logo",
   "community.modal.permission": "Community permissions",

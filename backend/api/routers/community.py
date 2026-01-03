@@ -4,6 +4,8 @@ from django.utils.text import slugify
 from api.models import Community
 from api.schemas import CommunityCreateSchema, CommunityUpdateSchema, CommunityApplicationStatusSchema, CommunityPermissionCreateSchema
 from api.auth import has_permission, has_approved_community, RequiresCommunityMembership
+from api.models import Mission
+from django.utils import timezone
 
 router = Router()
 
@@ -24,6 +26,9 @@ def list_communities(request, limit: int = 25, offset: int = 0):
     """List all communities with pagination"""
     total = Community.objects.count()
     communities = Community.objects.all()[offset:offset + limit]
+
+    now = timezone.now()
+
     return {
         'communities': [
             {
@@ -35,7 +40,9 @@ def list_communities(request, limit: int = 25, offset: int = 0):
                 'logoUrl': community.logo_url,
                 'gameServers': community.game_servers,
                 'voiceComms': community.voice_comms,
-                'repositories': community.repositories
+                'repositories': community.repositories,
+                'pastMissionsCount': Mission.objects.filter(community=community, start_time__lt=now).count(),
+                'futureMissionsCount': Mission.objects.filter(community=community, start_time__gte=now).count()
             }
             for community in communities
         ],

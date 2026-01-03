@@ -3,6 +3,8 @@
     <td>[{{ community.tag }}]</td>
     <td>{{ community.name }}</td>
     <td v-html="optionalCommunityWebsite"></td>
+    <td class="text-center">{{ community.pastMissionsCount || 0 }}</td>
+    <td class="text-center">{{ community.futureMissionsCount || 0 }}</td>
     <td class="text-center">
       <b-btn variant="primary" size="sm" :to="{name: 'communityDetails', params: {communitySlug: community.slug}}">
         <i class="fa fa-info" aria-hidden="true"></i> {{ $t('button.details') }}
