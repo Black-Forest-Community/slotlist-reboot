@@ -644,14 +644,9 @@ const actions = {
           throw 'Received invalid mission'
         }
 
-        // Update token if backend provided a new one with creator permissions
+        // Update token if backend provided a new one with editor permissions
         if (response.data.token) {
-          const jwtDecode = require('jwt-decode')
-          const decodedToken = jwtDecode(response.data.token)
-          commit('setToken', {
-            token: response.data.token,
-            decodedToken: decodedToken
-          })
+          dispatch('setToken', response.data.token, { root: true })
         }
 
         dispatch('showAlert', {

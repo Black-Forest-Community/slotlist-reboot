@@ -283,13 +283,20 @@ def create_mission(request, payload: MissionCreateSchema):
         creator=user,
         community=community
     )
-    
-    # Return token for backwards compatibility with frontend
-    # (no need to regenerate since creator status is checked via mission.creator.uid)
-    current_token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
+    # Create editor permission for the creator (for JWT refresh compatibility)
+    from api.models import Permission
+    Permission.objects.create(
+        user=user,
+        permission=f'mission.{slug}.editor'
+    )
+
+    # Regenerate JWT token with new permissions
+    from api.auth import generate_jwt
+    new_token = generate_jwt(user)
+
     return {
-        'token': current_token,
+        'token': new_token,
         'mission': {
             'uid': mission.uid,
             'slug': mission.slug,
