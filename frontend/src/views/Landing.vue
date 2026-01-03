@@ -9,12 +9,14 @@
       <p>
         {{ $t('landing.description') }}
       </p>
-      <router-link :to="{ name: 'login' }" class="btn btn-primary btn-lg">
-        <i class="fa fa-steam"></i> {{ $t('landing.signInButton') }}
-      </router-link>
-      <router-link :to="{ name: 'communityList' }" class="btn btn-secondary btn-lg ml-2">
-        <i class="fa fa-users"></i> {{ $t('landing.browseCommunities') }}
-      </router-link>
+      <div class="button-group">
+        <router-link :to="{ name: 'login' }" class="btn btn-primary btn-lg">
+          <i class="fa fa-steam"></i> {{ $t('landing.signInButton') }}
+        </router-link>
+        <router-link :to="{ name: 'communityList' }" class="btn btn-secondary btn-lg">
+          <i class="fa fa-users"></i> {{ $t('landing.browseCommunities') }}
+        </router-link>
+      </div>
     </div>
 
     <div class="container">
@@ -92,5 +94,29 @@ export default {
 
 .display-4 {
   font-weight: 300;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.button-group .btn {
+  flex: 1 1 auto;
+  min-width: 200px;
+}
+
+/* Mobile: stack buttons vertically and make full-width */
+@media (max-width: 576px) {
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group .btn {
+    width: 100%;
+    min-width: auto;
+  }
 }
 </style>
