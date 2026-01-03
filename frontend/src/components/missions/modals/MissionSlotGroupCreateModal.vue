@@ -19,6 +19,20 @@
           </div>
           <div class="row">
             <div class="col">
+              <b-form-fieldset :label="$t('mission.slotGroup.restricted.group')" state="success" :description="$t('mission.slotGroup.restricted.description')">
+                <b-form-checkbox v-model="missionSlotGroupCreateData.restricted"></b-form-checkbox>
+              </b-form-fieldset>
+            </div>
+          </div>
+          <div class="row" v-if="missionSlotGroupCreateData.restricted">
+            <div class="col">
+              <b-form-fieldset :label="$t('mission.slotGroup.restricted.selection')" :state="missionSlotGroupCreateRestrictedCommunityState" :description="$t('mission.slotGroup.restricted.selection.description')">
+                <typeahead action="searchCommunities" actionIndicator="searchingCommunities" :onHit="restrictedSlotGroupCommunitySelected" :initialValue="null"></typeahead>
+              </b-form-fieldset>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
               <b-form-fieldset :label="$t('mission.slotGroup.insertAfter')" state="success" :description="$t('mission.slotGroup.insertAfter.description')">
                 <b-form-select v-model="missionSlotGroupCreateData.insertAfter" :options="missionSlotGroupCreateInsertAfterOptions"></b-form-select>
               </b-form-fieldset>
@@ -49,6 +63,8 @@ export default {
       missionSlotGroupCreateData: {
         description: null,
         title: null,
+        restricted: false,
+        restrictedCommunityUid: null,
         insertAfter: 0
       }
     }
@@ -73,6 +89,9 @@ export default {
 
       return options
     },
+    missionSlotGroupCreateRestrictedCommunityState() {
+      return this.missionSlotGroupCreateData.restricted && _.isNil(this.missionSlotGroupCreateData.restrictedCommunityUid) ? 'danger' : 'success'
+    },
     missionSlotGroupCreateTitleFeedback() {
       return _.isString(this.missionSlotGroupCreateData.title) && !_.isEmpty(this.missionSlotGroupCreateData.title) ? '' : this.$t('mission.feedback.title.slotGroup')
     },
@@ -88,11 +107,15 @@ export default {
       this.missionSlotGroupCreateData = {
         description: null,
         title: null,
+        restricted: false,
+        restrictedCommunityUid: null,
         insertAfter: _.isNil(this.missionSlotGroups) || _.isEmpty(this.missionSlotGroups) ? 0 : _.last(this.missionSlotGroups).orderNumber
       };
     },
     createMissionSlotGroup() {
       if (_.isEmpty(this.missionSlotGroupCreateData.title)) {
+        return
+      } else if (this.missionSlotGroupCreateData.restricted && (_.isNil(this.missionSlotGroupCreateData.restrictedCommunityUid) || _.isEmpty(this.missionSlotGroupCreateData.restrictedCommunityUid))) {
         return
       }
 
@@ -100,12 +123,25 @@ export default {
         this.missionSlotGroupCreateData.description = null
       }
 
+      const slotGroupDetails = {
+        title: this.missionSlotGroupCreateData.title,
+        description: this.missionSlotGroupCreateData.description,
+        insertAfter: this.missionSlotGroupCreateData.insertAfter
+      }
+
+      if (this.missionSlotGroupCreateData.restricted && this.missionSlotGroupCreateData.restrictedCommunityUid) {
+        slotGroupDetails.restrictedCommunityUid = this.missionSlotGroupCreateData.restrictedCommunityUid
+      }
+
       this.hideMissionSlotGroupCreateModal();
 
-      this.$store.dispatch("createMissionSlotGroup", { missionSlug: this.$route.params.missionSlug, slotGroupDetails: this.missionSlotGroupCreateData })
+      this.$store.dispatch("createMissionSlotGroup", { missionSlug: this.$route.params.missionSlug, slotGroupDetails })
     },
     hideMissionSlotGroupCreateModal() {
       this.$refs.missionSlotGroupCreateModal.hide();
+    },
+    restrictedSlotGroupCommunitySelected(item) {
+      this.missionSlotGroupCreateData.restrictedCommunityUid = item.value.uid
     }
   }
 }

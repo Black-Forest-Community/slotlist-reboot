@@ -19,6 +19,20 @@
           </div>
           <div class="row">
             <div class="col">
+              <b-form-fieldset :label="$t('mission.slotGroup.restricted.group')" state="success" :description="$t('mission.slotGroup.restricted.description')">
+                <b-form-checkbox v-model="missionSlotGroupEditData.restricted"></b-form-checkbox>
+              </b-form-fieldset>
+            </div>
+          </div>
+          <div class="row" v-if="missionSlotGroupEditData.restricted">
+            <div class="col">
+              <b-form-fieldset :label="$t('mission.slotGroup.restricted.selection')" :state="missionSlotGroupEditRestrictedCommunityState" :description="$t('mission.slotGroup.restricted.selection.description')">
+                <typeahead action="searchCommunities" actionIndicator="searchingCommunities" :onHit="restrictedSlotGroupCommunitySelected" :initialValue="restrictedSlotGroupTypeaheadInitialValue"></typeahead>
+              </b-form-fieldset>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
               <b-form-fieldset :label="$t('mission.slotGroup.moveAfter')" state="success" :description="$t('mission.slotGroup.moveAfter.description')">
                 <b-form-select v-model="missionSlotGroupEditMoveAfter" :options="missionSlotGroupEditMoveAfterOptions"></b-form-select>
               </b-form-fieldset>
@@ -48,7 +62,9 @@ export default {
     return {
       missionSlotGroupEditData: {
         description: null,
-        title: null
+        title: null,
+        restricted: false,
+        restrictedCommunityUid: null
       },
       missionSlotGroupEditMoveAfter: 0
     }
@@ -84,6 +100,9 @@ export default {
 
       return options
     },
+    missionSlotGroupEditRestrictedCommunityState() {
+      return this.missionSlotGroupEditData.restricted && _.isNil(this.missionSlotGroupEditData.restrictedCommunityUid) ? 'danger' : 'success'
+    },
     missionSlotGroupEditTitleFeedback() {
       return _.isString(this.missionSlotGroupEditData.title) && !_.isEmpty(this.missionSlotGroupEditData.title) ? '' : this.$t('mission.feedback.title.slotGroup')
     },
@@ -92,19 +111,26 @@ export default {
     },
     missionSlotGroups() {
       return this.$store.getters.missionSlotGroups
+    },
+    restrictedSlotGroupTypeaheadInitialValue() {
+      return _.isNil(this.missionSlotGroupDetails.restrictedCommunity) ? null : this.missionSlotGroupDetails.restrictedCommunity.name
     }
   },
   methods: {
     setMissionSlotGroupEditData() {
       this.missionSlotGroupEditData = {
         description: this.missionSlotGroupDetails.description,
-        title: this.missionSlotGroupDetails.title
+        title: this.missionSlotGroupDetails.title,
+        restricted: !_.isNil(this.missionSlotGroupDetails.restrictedCommunity),
+        restrictedCommunityUid: _.isNil(this.missionSlotGroupDetails.restrictedCommunity) ? null : this.missionSlotGroupDetails.restrictedCommunity.uid
       }
 
       this.missionSlotGroupEditMoveAfter = this.missionSlotGroupDetails.orderNumber - 1
     },
     editMissionSlotGroup() {
       if (_.isEmpty(this.missionSlotGroupEditData.title)) {
+        return
+      } else if (this.missionSlotGroupEditData.restricted && (_.isNil(this.missionSlotGroupEditData.restrictedCommunityUid) || _.isEmpty(this.missionSlotGroupEditData.restrictedCommunityUid))) {
         return
       }
 
@@ -114,7 +140,18 @@ export default {
 
       const updatedMissionSlotGroupDetails = {}
       _.each(this.missionSlotGroupEditData, (value, key) => {
-        if (!_.isEqual(value, this.missionSlotGroupDetails[key])) {
+        if (key.toLowerCase() === 'restricted') {
+          if (!value && !_.isNil(this.missionSlotGroupDetails.restrictedCommunity)) {
+            updatedMissionSlotGroupDetails.restrictedCommunityUid = null
+          }
+          return
+        } else if (key.toLowerCase() === 'restrictedcommunityuid') {
+          const oldRestrictedCommunityUid = _.isNil(this.missionSlotGroupDetails.restrictedCommunity) ? null : this.missionSlotGroupDetails.restrictedCommunity.uid
+          if (!_.isEqual(value, oldRestrictedCommunityUid)) {
+            updatedMissionSlotGroupDetails.restrictedCommunityUid = value
+          }
+          return
+        } else if (!_.isEqual(value, this.missionSlotGroupDetails[key])) {
           updatedMissionSlotGroupDetails[key] = value
         }
       })
@@ -137,6 +174,9 @@ export default {
     },
     hideMissionSlotGroupEditModal() {
       this.$refs.missionSlotGroupEditModal.hide()
+    },
+    restrictedSlotGroupCommunitySelected(item) {
+      this.missionSlotGroupEditData.restrictedCommunityUid = item.value.uid
     }
   }
 }

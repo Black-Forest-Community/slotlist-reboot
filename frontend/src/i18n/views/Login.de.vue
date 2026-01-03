@@ -14,6 +14,11 @@
           <img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_01.png" alt="Anmeldung via Steam" title="Ja, das Login-Banner sieht absolut grässlich aus, aber leider zwingt uns Valve, es zu verwenden >.< Wie auch immer, klick hier zur Anmeldung via Steam">
         </a>
       </p>
+      <p v-if="loginRedirectUrl" class="text-center">
+        <small class="text-muted">
+          <strong>Hinweis:</strong> Durch die Anmeldung erklären Sie sich damit einverstanden, dass Ihre SteamID und Ihr Nutzername gespeichert werden.
+        </small>
+      </p>
     </b-jumbotron>
     <div class="row text-center">
       <div class="col">

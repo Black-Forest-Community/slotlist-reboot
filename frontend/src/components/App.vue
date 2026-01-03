@@ -88,8 +88,7 @@
           <div class="col text-center">
             <span class="text-muted small">
               Forked with
-              <i class="fa fa-heart" aria-hidden="true"></i> by Black Forest from
-              <a href="https://github.com/MorpheusXAUT">MorpheusXAUT</a>
+              <i class="fa fa-heart" aria-hidden="true"></i> by Black Forest
             </span>
           </div>
           <div class="col">
@@ -98,7 +97,6 @@
               <router-link to="/about">{{ $t('nav.about') }}</router-link> |
               <router-link to="/imprint">{{ $t('nav.imprint') }}</router-link> |
               <router-link to="/privacy">{{ $t('nav.privacy') }}</router-link> |
-              <router-link to="/api">{{ $t('nav.api') }}</router-link> |
               <a href="https://github.com/Black-Forest-Community/slotlist-reboot">
                 <i class="fa fa-github"></i> Source Code</a> |
             </span>

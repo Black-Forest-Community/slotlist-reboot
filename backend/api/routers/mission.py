@@ -244,13 +244,17 @@ def create_mission(request, payload: MissionCreateSchema):
     # Use provided slug or generate from title
     slug = payload.slug if payload.slug else slugify(payload.title)
     
-    # Convert tech_teleport and tech_respawn to tech_support string
-    tech_support_parts = []
-    if payload.tech_teleport:
-        tech_support_parts.append('teleport')
-    if payload.tech_respawn:
-        tech_support_parts.append('respawn')
-    tech_support = ', '.join(tech_support_parts) if tech_support_parts else None
+    # Handle tech_support - prefer direct value from payload, otherwise build from booleans
+    if payload.tech_support is not None:
+        tech_support = payload.tech_support
+    else:
+        # Convert tech_teleport and tech_respawn to tech_support string
+        tech_support_parts = []
+        if payload.tech_teleport:
+            tech_support_parts.append('teleport')
+        if payload.tech_respawn:
+            tech_support_parts.append('respawn')
+        tech_support = ', '.join(tech_support_parts) if tech_support_parts else None
     
     # Use default datetime for required fields if not provided
     from datetime import datetime, timezone
@@ -535,7 +539,8 @@ def duplicate_mission(request, slug: str, payload: MissionDuplicateSchema):
                 mission=new_mission,
                 title=slot_group.title,
                 description=slot_group.description,
-                order_number=slot_group.order_number
+                order_number=slot_group.order_number,
+                restricted_community=slot_group.restricted_community
             )
             
             # Duplicate slots in this group
@@ -629,9 +634,10 @@ def get_mission_slots(request, slug: str):
     
     # Get all slot groups with their slots for this mission
     slot_groups = MissionSlotGroup.objects.filter(mission=mission).prefetch_related(
-        'slots__assignee',
+        'slots__assignee__community',
         'slots__restricted_community',
-        'slots__registrations__user'
+        'slots__registrations__user',
+        'restricted_community'
     ).order_by('order_number')
     
     result = []
@@ -666,6 +672,12 @@ def get_mission_slots(request, slug: str):
                     'uid': str(slot.assignee.uid),
                     'nickname': slot.assignee.nickname,
                     'steamId': slot.assignee.steam_id,
+                    'community': {
+                        'uid': str(slot.assignee.community.uid),
+                        'name': slot.assignee.community.name,
+                        'tag': slot.assignee.community.tag,
+                        'slug': slot.assignee.community.slug,
+                    } if slot.assignee.community else None
                 } if slot.assignee else None,
                 'restrictedCommunity': {
                     'uid': str(slot.restricted_community.uid),
@@ -681,6 +693,12 @@ def get_mission_slots(request, slug: str):
             'title': slot_group.title,
             'description': slot_group.description,
             'orderNumber': slot_group.order_number,
+            'restrictedCommunity': {
+                'uid': str(slot_group.restricted_community.uid),
+                'name': slot_group.restricted_community.name,
+                'tag': slot_group.restricted_community.tag,
+                'slug': slot_group.restricted_community.slug,
+            } if slot_group.restricted_community else None,
             'slots': slots
         }
         result.append(group_data)
@@ -705,7 +723,7 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
     
     total = MissionSlotRegistration.objects.filter(slot=slot).count()
-    registrations = MissionSlotRegistration.objects.filter(slot=slot).select_related('user')[offset:offset + limit]
+    registrations = MissionSlotRegistration.objects.filter(slot=slot).select_related('user__community')[offset:offset + limit]
     
     return {
         'registrations': [
@@ -716,6 +734,12 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
                     'uid': str(reg.user.uid),
                     'nickname': reg.user.nickname,
                     'steamId': reg.user.steam_id,
+                    'community': {
+                        'uid': str(reg.user.community.uid),
+                        'name': reg.user.community.name,
+                        'tag': reg.user.community.tag,
+                        'slug': reg.user.community.slug,
+                    } if reg.user.community else None
                 },
                 'comment': reg.comment,
                 'confirmed': reg.status == 'confirmed',
@@ -734,10 +758,28 @@ def get_slot_registrations(request, slug: str, slot_uid: UUID, limit: int = 10, 
 def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistrationCreateSchema):
     """Register the authenticated user for a mission slot"""
     user_uid = request.auth.get('user', {}).get('uid')
-    user = get_object_or_404(User, uid=user_uid)
+    user = get_object_or_404(User.objects.select_related('community'), uid=user_uid)
     
     mission = get_object_or_404(Mission, slug=slug)
-    slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
+    slot = get_object_or_404(MissionSlot.objects.select_related('slot_group', 'restricted_community', 'slot_group__restricted_community'), uid=slot_uid, slot_group__mission=mission)
+    
+    # Check if slot is blocked
+    if slot.blocked:
+        return 403, {'detail': 'This slot is blocked and cannot be registered for'}
+    
+    # Check if slot is already assigned
+    if slot.assignee:
+        return 400, {'detail': 'This slot is already assigned'}
+    
+    # Check slot-level restricted community
+    if slot.restricted_community:
+        if not user.community or str(user.community.uid) != str(slot.restricted_community.uid):
+            return 403, {'detail': f'This slot is restricted to [{slot.restricted_community.tag}] {slot.restricted_community.name}'}
+    
+    # Check slot group-level restricted community
+    if slot.slot_group.restricted_community:
+        if not user.community or str(user.community.uid) != str(slot.slot_group.restricted_community.uid):
+            return 403, {'detail': f'This slot group is restricted to [{slot.slot_group.restricted_community.tag}] {slot.slot_group.restricted_community.name}'}
     
     # Check if user is already registered
     existing = MissionSlotRegistration.objects.filter(user=user, slot=slot).first()
@@ -784,6 +826,12 @@ def register_for_slot(request, slug: str, slot_uid: UUID, data: SlotRegistration
                 'uid': str(user.uid),
                 'nickname': user.nickname,
                 'steamId': user.steam_id,
+                'community': {
+                    'uid': str(user.community.uid),
+                    'name': user.community.name,
+                    'tag': user.community.tag,
+                    'slug': user.community.slug,
+                } if user.community else None
             },
             'comment': registration.comment,
             'confirmed': False,
@@ -802,7 +850,7 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
     
     mission = get_object_or_404(Mission, slug=slug)
     slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
-    registration = get_object_or_404(MissionSlotRegistration, uid=registration_uid, slot=slot)
+    registration = get_object_or_404(MissionSlotRegistration.objects.select_related('user__community'), uid=registration_uid, slot=slot)
 
     
     # Check permissions - user must be mission creator, editor, or have appropriate permissions
@@ -848,6 +896,12 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
                     'uid': str(registration.user.uid),
                     'nickname': registration.user.nickname,
                     'steamId': registration.user.steam_id,
+                    'community': {
+                        'uid': str(registration.user.community.uid),
+                        'name': registration.user.community.name,
+                        'tag': registration.user.community.tag,
+                        'slug': registration.user.community.slug,
+                    } if registration.user.community else None
                 },
                 'comment': registration.comment,
                 'confirmed': True,
@@ -886,6 +940,12 @@ def update_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
                     'uid': str(registration.user.uid),
                     'nickname': registration.user.nickname,
                     'steamId': registration.user.steam_id,
+                    'community': {
+                        'uid': str(registration.user.community.uid),
+                        'name': registration.user.community.name,
+                        'tag': registration.user.community.tag,
+                        'slug': registration.user.community.slug,
+                    } if registration.user.community else None
                 },
                 'comment': registration.comment,
                 'confirmed': False,
@@ -928,18 +988,18 @@ def delete_slot_registration(request, slug: str, slot_uid: UUID, registration_ui
 def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSchema):
     """Assign a user to a mission slot"""
     current_user_uid = request.auth.get('user', {}).get('uid')
-    current_user = get_object_or_404(User, uid=current_user_uid)
+    current_user = get_object_or_404(User.objects.select_related('community'), uid=current_user_uid)
     permissions = request.auth.get('permissions', [])
     
     mission = get_object_or_404(Mission, slug=slug)
-    slot = get_object_or_404(MissionSlot, uid=slot_uid, slot_group__mission=mission)
+    slot = get_object_or_404(MissionSlot.objects.select_related('slot_group', 'restricted_community', 'slot_group__restricted_community'), uid=slot_uid, slot_group__mission=mission)
     
     # Get target user from payload
     target_user_uid = payload.userUid
     force = payload.force
     suppress_notifications = payload.suppressNotifications
     
-    target_user = get_object_or_404(User, uid=target_user_uid)
+    target_user = get_object_or_404(User.objects.select_related('community'), uid=target_user_uid)
     
     # Check if slot is already assigned
     if slot.assignee and not force:
@@ -961,7 +1021,13 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
     if slot.restricted_community:
         if not target_user.community or str(target_user.community.uid) != str(slot.restricted_community.uid):
             if not is_creator and not is_admin and not is_editor:
-                return 403, {'detail': 'This slot is restricted to a specific community'}
+                return 403, {'detail': f'This slot is restricted to [{slot.restricted_community.tag}] {slot.restricted_community.name}'}
+    
+    # Community slot group restrictions
+    if slot.slot_group.restricted_community:
+        if not target_user.community or str(target_user.community.uid) != str(slot.slot_group.restricted_community.uid):
+            if not is_creator and not is_admin:
+                return 403, {'detail': f'This slot group is restricted to [{slot.slot_group.restricted_community.tag}] {slot.slot_group.restricted_community.name}'}
     
     # Only mission creator, editor, or admin can assign other users
     if not is_self_assignment and not is_creator and not is_admin and not is_editor:
@@ -1009,6 +1075,12 @@ def assign_slot(request, slug: str, slot_uid: UUID, payload: MissionSlotAssignSc
             'assignee': {
                 'uid': str(target_user.uid),
                 'nickname': target_user.nickname,
+                'community': {
+                    'uid': str(target_user.community.uid),
+                    'name': target_user.community.name,
+                    'tag': target_user.community.tag,
+                    'slug': target_user.community.slug,
+                } if target_user.community else None
             },
             'registrationUid': str(registration.uid)
         }
@@ -1078,12 +1150,18 @@ def create_mission_slot_group(request, slug: str, data: MissionSlotGroupCreateSc
             group.order_number += 1
             group.save()
     
+    # Get restricted community if specified
+    restricted_community = None
+    if data.restrictedCommunityUid:
+        restricted_community = get_object_or_404(Community, uid=data.restrictedCommunityUid)
+    
     # Create the new slot group
     slot_group = MissionSlotGroup.objects.create(
         mission=mission,
         title=data.title,
         description=data.description if data.description else '',
-        order_number=new_order_number
+        order_number=new_order_number,
+        restricted_community=restricted_community
     )
     
     return {
@@ -1092,6 +1170,11 @@ def create_mission_slot_group(request, slug: str, data: MissionSlotGroupCreateSc
             'title': slot_group.title,
             'description': slot_group.description,
             'orderNumber': slot_group.order_number,
+            'restrictedCommunity': {
+                'uid': str(restricted_community.uid),
+                'name': restricted_community.name,
+                'tag': restricted_community.tag
+            } if restricted_community else None,
             'slots': []
         }
     }
@@ -1118,6 +1201,15 @@ def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: Mi
     
     if data.description is not None:
         slot_group.description = data.description
+    
+    # Handle restricted community update
+    if hasattr(data, 'restrictedCommunityUid'):
+        if data.restrictedCommunityUid is not None:
+            restricted_community = get_object_or_404(Community, uid=data.restrictedCommunityUid)
+            slot_group.restricted_community = restricted_community
+        elif data.restrictedCommunityUid is None:
+            # Explicitly set to None to remove restriction
+            slot_group.restricted_community = None
     
     if data.orderNumber is not None and data.orderNumber != slot_group.order_number:
         old_order = slot_group.order_number
@@ -1148,7 +1240,12 @@ def update_mission_slot_group(request, slug: str, slot_group_uid: UUID, data: Mi
             'uid': str(slot_group.uid),
             'title': slot_group.title,
             'description': slot_group.description,
-            'orderNumber': slot_group.order_number
+            'orderNumber': slot_group.order_number,
+            'restrictedCommunity': {
+                'uid': str(slot_group.restricted_community.uid),
+                'name': slot_group.restricted_community.name,
+                'tag': slot_group.restricted_community.tag
+            } if slot_group.restricted_community else None
         }
     }
 

@@ -14,6 +14,11 @@
           <img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam" title="Yes, this login banner looks atrocious, unfortunately Valve forces us to use it >.< Anyways, click to sign in through Steam">
         </a>
       </p>
+      <p v-if="loginRedirectUrl" class="text-center">
+        <small class="text-muted">
+          <strong>Notice:</strong> By signing in, you agree to the storage of your SteamID and username.
+        </small>
+      </p>
     </b-jumbotron>
     <div class="row text-center">
       <div class="col">

@@ -10,7 +10,6 @@ import CommunityCreator from '../views/CommunityCreator'
 import MissionList from '../views/MissionList'
 import MissionDetails from '../views/MissionDetails'
 import MissionCreator from '../views/MissionCreator'
-import MissionImport from '../views/MissionImport'
 import MissionSlotTemplateList from '../views/MissionSlotTemplateList'
 import MissionSlotTemplateDetails from '../views/MissionSlotTemplateDetails'
 import MissionSlotTemplateCreator from '../views/MissionSlotTemplateCreator'
@@ -22,7 +21,6 @@ import Login from '../views/Login'
 import About from '../views/About'
 import Imprint from '../views/Imprint'
 import Privacy from '../views/Privacy'
-import Api from '../views/Api'
 
 Vue.use(Router)
 
@@ -86,11 +84,6 @@ export const router = new Router({
       meta: {
         authenticated: true // only logged in users can access this page
       }
-    },
-    {
-      path: '/import',
-      name: 'missionImport',
-      component: MissionImport
     },
     {
       path: '/mission-slot-templates',
@@ -168,11 +161,6 @@ export const router = new Router({
       path: '/privacy',
       name: 'privacy',
       component: Privacy
-    },
-    {
-      path: '/api',
-      name: 'api',
-      component: Api
     },
     {
       path: '/community-application-gate',

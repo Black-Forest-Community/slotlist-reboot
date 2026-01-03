@@ -1,6 +1,11 @@
 <template>
   <div>
-    <h5>{{ missionSlotGroup.title }}</h5>
+    <h5>
+      {{ missionSlotGroup.title }}
+      <span v-if="missionSlotGroup.restrictedCommunity" class="badge badge-warning ml-2">
+        <i class="fa fa-lock" aria-hidden="true"></i> {{ missionSlotGroup.restrictedCommunity.tag }}
+      </span>
+    </h5>
     <div class="word-wrap" v-show="missionSlotGroup.description">{{ missionSlotGroup.description }}</div>
     <mission-slotlist-group-slots-table :missionSlotGroup="missionSlotGroup"></mission-slotlist-group-slots-table>
     <div class="text-center" v-if="isMissionEditor && !hasMissionEnded">

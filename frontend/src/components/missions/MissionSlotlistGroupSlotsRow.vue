@@ -64,12 +64,23 @@ export default {
         userCommunityUid = user.community.uid
       }
 
-      let restrictedCommunityUid = null;
+      // Check slot-level restricted community
+      let slotRestrictedCommunityUid = null;
       if (!_.isNil(this.missionSlotDetails.restrictedCommunity)) {
-        restrictedCommunityUid = this.missionSlotDetails.restrictedCommunity.uid
+        slotRestrictedCommunityUid = this.missionSlotDetails.restrictedCommunity.uid
       }
 
-      return _.isNil(this.missionSlotDetails.assignee) &&_.isNil(this.missionSlotDetails.externalAssignee) && (_.isNil(restrictedCommunityUid) || _.isEqual(userCommunityUid, restrictedCommunityUid))
+      // Check slot group-level restricted community
+      let groupRestrictedCommunityUid = null;
+      if (!_.isNil(this.missionSlotGroup.restrictedCommunity)) {
+        groupRestrictedCommunityUid = this.missionSlotGroup.restrictedCommunity.uid
+      }
+
+      const slotAvailable = _.isNil(this.missionSlotDetails.assignee) && _.isNil(this.missionSlotDetails.externalAssignee)
+      const canAccessSlot = _.isNil(slotRestrictedCommunityUid) || _.isEqual(userCommunityUid, slotRestrictedCommunityUid)
+      const canAccessGroup = _.isNil(groupRestrictedCommunityUid) || _.isEqual(userCommunityUid, groupRestrictedCommunityUid)
+
+      return slotAvailable && canAccessSlot && canAccessGroup
     },
     difficultyColor() {
       switch (this.missionSlotDetails.difficulty) {

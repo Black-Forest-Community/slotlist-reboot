@@ -241,6 +241,14 @@ class MissionSlotGroup(models.Model):
     description = models.TextField(null=True, blank=True)
     order_number = models.IntegerField(default=0, db_column='orderNumber')
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name='slot_groups', db_column='missionUid')
+    restricted_community = models.ForeignKey(
+        Community,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='restricted_slot_groups',
+        db_column='restrictedCommunityUid'
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_column='createdAt')
     updated_at = models.DateTimeField(auto_now=True, db_column='updatedAt')
 
