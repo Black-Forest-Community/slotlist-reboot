@@ -1,6 +1,6 @@
 <template>
   <b-jumbotron header="About slotlist.online">
-    You play Arma and need a tool to manage your slotlists? Write us an <a href="mailto:hello@slotlist.online">an email</a>!
+    You play Arma and need a tool to manage your slotlists? <router-link to="/community-creator">Create the community</router-link> and write us an <a href="mailto:hello@slotlist.online">an email</a>!
   </b-jumbotron>
 </template>
 
