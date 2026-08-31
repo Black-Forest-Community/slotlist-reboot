@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '../store'
+import { requireAuth, requireCommunity } from './guards'
 import Home from '../views/Home'
 import FAQ from '../views/FAQ'
 import CommunityList from '../views/CommunityList'
@@ -44,7 +45,11 @@ export const router = new Router({
     {
       path: '/communities/:communitySlug',
       name: 'communityDetails',
-      component: CommunityDetails
+      component: CommunityDetails,
+      beforeEnter: requireAuth,
+      meta: {
+        authenticated: true
+      }
     },
     {
       path: '/community-creator',
@@ -57,12 +62,20 @@ export const router = new Router({
     {
       path: '/missions',
       name: 'missionList',
-      component: MissionList
+      component: MissionList,
+      beforeEnter: requireCommunity,
+      meta: {
+        authenticated: true
+      }
     },
     {
       path: '/missions/:missionSlug',
       name: 'missionDetails',
-      component: MissionDetails
+      component: MissionDetails,
+      beforeEnter: requireCommunity,
+      meta: {
+        authenticated: true
+      }
     },
     {
       path: '/mission-creator',
@@ -102,6 +115,7 @@ export const router = new Router({
       path: '/users',
       name: 'userList',
       component: UserList,
+      beforeEnter: requireCommunity,
       meta: {
         authenticated: true // only logged in users can access this page
       }
@@ -109,7 +123,11 @@ export const router = new Router({
     {
       path: '/users/:userUid',
       name: 'userDetails',
-      component: UserDetails
+      component: UserDetails,
+      beforeEnter: requireCommunity,
+      meta: {
+        authenticated: true
+      }
     },
     {
       path: '/account',
@@ -125,7 +143,10 @@ export const router = new Router({
       component: Login,
       beforeEnter: (to, from, next) => {
         // Set path of previous route before accessing login route, used for redirects after successful authentication
-        store.dispatch('setRedirect', { path: from.path })
+        // Only set if coming from a real route (not the initial navigation) and not already set by guards
+        if (from.name && from.path !== '/login') {
+          store.dispatch('setRedirect', { path: from.fullPath })
+        }
         next()
       }
     },
@@ -144,6 +165,14 @@ export const router = new Router({
       name: 'privacy',
       component: Privacy
     },
+    {
+      path: '/community-application-gate',
+      name: 'communityApplicationGate',
+      component: () => import('../views/CommunityApplicationGate.vue'),
+      meta: {
+        authenticated: true
+      }
+    }
   ],
   linkExactActiveClass: 'active'
 })

@@ -2,6 +2,8 @@
 
 This repository contains slotlist-reboot, an ArmA 3 mission planning and slotlist management system.
 
+Dont write summary markdowns after your work!
+
 ## Project Structure
 
 This is a dual-stack application with separate backend and frontend:
@@ -12,12 +14,14 @@ This is a dual-stack application with separate backend and frontend:
 ## Key Architecture Principles
 
 ### Backend (Django)
+
 - **API Compatibility**: Maintains 100% compatibility with original TypeScript/Hapi.js backend
 - **Unmanaged Models**: All Django models use `managed = False` to preserve existing database schema
 - **Database Columns**: Use `db_column` attributes to map to camelCase database columns (e.g., `createdAt`, `updatedAt`)
 - **Authentication**: JWT tokens with Steam OpenID integration
 
 ### Frontend (Vue.js 2)
+
 - **Legacy Stack**: Uses Vue.js 2, Vuex, webpack 2.2.0 from 2017
 - **Component Organization**: Features organized in directories (missions/, communities/, users/)
 - **State Management**: Vuex modules for each major feature area
@@ -26,6 +30,7 @@ This is a dual-stack application with separate backend and frontend:
 ## Code Style Guidelines
 
 ### Backend Python Code
+
 - Follow Django conventions and PEP 8
 - Use Django Ninja for API endpoints with Pydantic schemas
 - All models must maintain compatibility with existing database schema
@@ -34,6 +39,7 @@ This is a dual-stack application with separate backend and frontend:
 - Include docstrings for complex business logic
 
 ### Frontend JavaScript/Vue Code
+
 - Follow existing code style (uses XO linter)
 - Use Vue.js 2 patterns - no Composition API
 - Maintain consistency with existing component structure
@@ -43,24 +49,28 @@ This is a dual-stack application with separate backend and frontend:
 ## Important Constraints
 
 ### Development Environment
+
 - **NEVER** start services (docker-compose, runserver, yarn dev) - assume they are already running locally
 - Services run via root `docker-compose.yml` during local development
 - Backend runs on port 8022, frontend on port 3000
 - Use existing running services for testing and validation
 
 ### Database Management
+
 - **NEVER** run Django migrations on production tables
 - **NEVER** modify model Meta classes to enable management
 - **NEVER** change `db_column` mappings - they match the original schema
 - Use raw SQL or external tools for schema changes if absolutely necessary
 
 ### API Compatibility
+
 - All API endpoints must maintain compatibility with original backend
 - Response formats must match exactly - use existing test suite to verify
 - Don't change URL patterns or HTTP methods
 - Preserve existing error response formats
 
 ### Authentication
+
 - Steam OpenID is the only authentication method
 - JWT tokens are required for authenticated endpoints
 - Use existing permission system for authorization
@@ -69,6 +79,7 @@ This is a dual-stack application with separate backend and frontend:
 ## Development Patterns
 
 ### Adding New API Endpoints
+
 1. Define Pydantic schemas in `api/schemas.py`
 2. Add router function in appropriate `api/routers/` file
 3. Register router in `api/api.py`
@@ -76,6 +87,7 @@ This is a dual-stack application with separate backend and frontend:
 5. Verify compatibility with existing frontend code
 
 ### Adding New Frontend Features
+
 1. Create components in appropriate feature directory
 2. Add Vuex actions/mutations if state management needed
 3. Update router configuration if new routes required
@@ -83,6 +95,7 @@ This is a dual-stack application with separate backend and frontend:
 5. Use existing API integration patterns
 
 ### Working with Models
+
 - Use Django ORM for queries but respect unmanaged nature
 - Join queries across models are safe and encouraged
 - Use select_related() and prefetch_related() for performance
@@ -92,12 +105,14 @@ This is a dual-stack application with separate backend and frontend:
 ## Testing Requirements
 
 ### Backend Tests
+
 - Run full compatibility test suite: `./run_compatibility_tests.sh`
 - Add tests for new endpoints in appropriate test files
 - Maintain API compatibility - tests will fail if responses change
 - Use test database for isolated testing
 
 ### Frontend Testing
+
 - No automated test suite currently exists
 - Manual testing required for UI changes
 - Test across different user permission levels
@@ -106,6 +121,7 @@ This is a dual-stack application with separate backend and frontend:
 ## Common Patterns
 
 ### Django Model Queries
+
 ```python
 # Good - using ORM with proper relationships
 missions = Mission.objects.select_related('creator', 'community').filter(visibility='public')
@@ -115,6 +131,7 @@ users = User.objects.filter(community__slug='example-community')
 ```
 
 ### Vue.js Component Structure
+
 ```javascript
 // Follow existing component pattern
 export default {
@@ -137,6 +154,7 @@ export default {
 ```
 
 ### Vuex Actions
+
 ```javascript
 // Use existing pattern for API calls
 async fetchData({ commit }, payload) {
@@ -154,12 +172,14 @@ async fetchData({ commit }, payload) {
 ## Environment Setup
 
 ### Backend
+
 - Python 3.9+ required
 - PostgreSQL database required (no SQLite support)
 - Steam API key required for authentication
 - Use virtual environment for dependencies
 
 ### Frontend
+
 - Node.js 8.1+ (legacy requirement)
 - Yarn package manager
 - Webpack 2.x build system
@@ -168,12 +188,14 @@ async fetchData({ commit }, payload) {
 ## Debugging Tips
 
 ### Backend Issues
+
 - Use Django admin at `/admin/` for data inspection
 - API docs available at `/api/docs` for endpoint testing
 - Check Steam API connectivity for auth issues
 - Verify database connection and permissions
 
 ### Frontend Issues
+
 - Vue DevTools extension highly recommended
 - Check browser console for JavaScript errors
 - Verify API endpoint responses in Network tab
@@ -190,6 +212,7 @@ async fetchData({ commit }, payload) {
 ## Legacy Compatibility
 
 This project maintains compatibility with the original slotlist.online implementation:
+
 - Database schema cannot be changed
 - API responses must match original format
 - Frontend must work with existing user expectations
@@ -198,6 +221,7 @@ This project maintains compatibility with the original slotlist.online implement
 ## Build and Deployment Commands
 
 ### Backend Build
+
 ```bash
 # Install dependencies
 cd backend
@@ -211,6 +235,7 @@ python manage.py collectstatic --noinput
 ```
 
 ### Frontend Build
+
 ```bash
 # Install dependencies
 cd frontend
@@ -225,6 +250,7 @@ yarn build            # Creates optimized build in build/ directory
 ```
 
 ### Docker Deployment
+
 ```bash
 # Start all services
 docker-compose up --build
@@ -244,6 +270,7 @@ docker-compose --profile production up frontend
 ### Backend Commands
 
 **Linting and Code Quality**:
+
 ```bash
 cd backend
 # Django has no specific linter configured - follow PEP 8 and Django conventions
@@ -251,6 +278,7 @@ python -m py_compile <file>  # Check syntax
 ```
 
 **Testing**:
+
 ```bash
 cd backend
 # Run full compatibility test suite
@@ -265,6 +293,7 @@ coverage report
 ```
 
 **Database**:
+
 ```bash
 cd backend
 # Create Django admin superuser
@@ -280,6 +309,7 @@ python manage.py dbshell
 ### Frontend Commands
 
 **Linting**:
+
 ```bash
 cd frontend
 # Run XO linter (ESLint wrapper)
@@ -290,6 +320,7 @@ yarn lint --fix
 ```
 
 **Development**:
+
 ```bash
 cd frontend
 # Start development server with hot reload
@@ -305,6 +336,7 @@ yarn build
 ## File Organization
 
 ### Backend Structure
+
 ```
 backend/
 ├── api/                    # API implementation
@@ -320,6 +352,7 @@ backend/
 ```
 
 ### Frontend Structure
+
 ```
 frontend/
 ├── src/

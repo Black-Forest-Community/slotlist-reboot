@@ -3,7 +3,9 @@ from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
 from api.models import Community
 from api.schemas import CommunityCreateSchema, CommunityUpdateSchema, CommunityApplicationStatusSchema, CommunityPermissionCreateSchema
-from api.auth import has_permission
+from api.auth import has_permission, has_approved_community, RequiresCommunityMembership
+from api.models import Mission
+from django.utils import timezone
 
 router = Router()
 
@@ -24,6 +26,9 @@ def list_communities(request, limit: int = 25, offset: int = 0):
     """List all communities with pagination"""
     total = Community.objects.count()
     communities = Community.objects.all()[offset:offset + limit]
+
+    now = timezone.now()
+
     return {
         'communities': [
             {
@@ -35,7 +40,9 @@ def list_communities(request, limit: int = 25, offset: int = 0):
                 'logoUrl': community.logo_url,
                 'gameServers': community.game_servers,
                 'voiceComms': community.voice_comms,
-                'repositories': community.repositories
+                'repositories': community.repositories,
+                'pastMissionsCount': Mission.objects.filter(community=community, start_time__lt=now).count(),
+                'futureMissionsCount': Mission.objects.filter(community=community, start_time__gte=now).count()
             }
             for community in communities
         ],
@@ -47,34 +54,58 @@ def list_communities(request, limit: int = 25, offset: int = 0):
 def get_community(request, slug: str):
     """Get a single community by slug"""
     community = get_object_or_404(Community, slug=slug)
-    
-    # Get members and leaders
+
+    # Check if user is authenticated and has community
+    is_authenticated_with_community = False
+    if hasattr(request, 'auth') and request.auth:
+        user_uid = request.auth.get('user', {}).get('uid')
+        if user_uid:
+            has_community, _ = has_approved_community(user_uid)
+            is_authenticated_with_community = has_community
+
+    # If not authenticated with community, return basic info only
+    if not is_authenticated_with_community:
+        return {
+            'community': {
+                'uid': community.uid,
+                'name': community.name,
+                'tag': community.tag,
+                'slug': community.slug,
+                'website': community.website,
+                'logoUrl': community.logo_url,
+                # Don't include members, leaders, or detailed resources
+                'members': [],
+                'leaders': []
+            }
+        }
+
+    # Get members and leaders (full data for authenticated users with community)
     from api.models import User, Permission
-    
+
     members = []
     leaders = []
-    
+
     # Get all users in this community
     community_users = User.objects.filter(community=community).select_related('community')
-    
+
     for user in community_users:
         user_data = {
             'uid': user.uid,
             'nickname': user.nickname,
             'steamId': user.steam_id,
         }
-        
+
         # Check if user is a leader (has community.{slug}.leader permission)
         is_leader = Permission.objects.filter(
             user=user,
             permission=f'community.{slug}.leader'
         ).exists()
-        
+
         if is_leader:
             leaders.append(user_data)
         else:
             members.append(user_data)
-    
+
     return {
         'community': {
             'uid': community.uid,
@@ -208,7 +239,7 @@ def delete_community(request, slug: str):
     return {'success': True}
 
 
-@router.get('/{slug}/missions', auth=None)
+@router.get('/{slug}/missions', auth=RequiresCommunityMembership())
 def get_community_missions(request, slug: str, limit: int = 10, offset: int = 0, includeEnded: bool = False):
     """Get missions for a community"""
     from api.models import Mission
@@ -254,7 +285,7 @@ def get_community_missions(request, slug: str, limit: int = 10, offset: int = 0,
     }
 
 
-@router.get('/{slug}/permissions', auth=None)
+@router.get('/{slug}/permissions', auth=RequiresCommunityMembership())
 def get_community_permissions(request, slug: str, limit: int = 10, offset: int = 0):
     """Get permissions for a community"""
     from api.models import Permission, User
@@ -285,7 +316,7 @@ def get_community_permissions(request, slug: str, limit: int = 10, offset: int =
     }
 
 
-@router.get('/{slug}/repositories', auth=None)
+@router.get('/{slug}/repositories', auth=RequiresCommunityMembership())
 def get_community_repositories(request, slug: str):
     """Get repositories for a community"""
     community = get_object_or_404(Community, slug=slug)
@@ -295,7 +326,7 @@ def get_community_repositories(request, slug: str):
     }
 
 
-@router.get('/{slug}/servers', auth=None)
+@router.get('/{slug}/servers', auth=RequiresCommunityMembership())
 def get_community_servers(request, slug: str):
     """Get servers for a community"""
     community = get_object_or_404(Community, slug=slug)
@@ -384,41 +415,41 @@ def get_community_applications(request, slug: str, limit: int = 10, offset: int 
     }
 
 
-@router.post('/{slug}/applications')
+@router.post('/{slug}/applications', response={200: dict, 400: dict, 401: dict})
 def create_community_application(request, slug: str):
     """Submit an application to join a community"""
     from api.models import CommunityApplication, User
-    
+
     # User must be authenticated
     if not request.auth:
         return 401, {'detail': 'Authentication required'}
-    
+
     community = get_object_or_404(Community, slug=slug)
     auth_user_uid = request.auth.get('user', {}).get('uid')
-    
+
     if not auth_user_uid:
         return 401, {'detail': 'Invalid authentication'}
-    
+
     # Get the user
     user = get_object_or_404(User, uid=auth_user_uid)
-    
+
     # Check if user already has an application for this community
     existing_app = CommunityApplication.objects.filter(
         user=user,
         community=community
     ).first()
-    
+
     if existing_app:
         return 400, {'message': 'You have already submitted an application to this community'}
-    
+
     # Create the application
     application = CommunityApplication.objects.create(
         user=user,
         community=community,
         status='submitted'
     )
-    
-    return {
+
+    return 200, {
         'status': application.status,
         'uid': str(application.uid)
     }
@@ -441,20 +472,17 @@ def process_community_application(request, slug: str, application_uid: str, payl
     # Get the application
     application = get_object_or_404(CommunityApplication, uid=application_uid, community=community)
     
-    # Get status from payload
-    new_status = payload.status
-    if new_status not in ['accepted', 'denied']:
+    # Get status from payload and map 'accepted' to 'approved' for backwards compatibility
+    requested_status = payload.status
+    if requested_status not in ['accepted', 'denied']:
         return 400, {'detail': 'status must be "accepted" or "denied"'}
-    
-    # Update application status
+
+    # Map 'accepted' to 'approved' to match model STATUS_CHOICES
+    new_status = 'approved' if requested_status == 'accepted' else 'denied'
+
+    # Update application status (model's save() method will handle community assignment)
     application.status = new_status
     application.save()
-    
-    # If accepted, add user to community
-    if new_status == 'accepted':
-        user = application.user
-        user.community = community
-        user.save()
     
     return {
         'application': {
